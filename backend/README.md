@@ -34,7 +34,7 @@ Local dev server: `http://localhost:3000`
 Response:
 
 ```json
-
+{"message":"API is running"}
 ```
 
 ## Quick Test (PowerShell)
