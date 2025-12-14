@@ -48,21 +48,27 @@ export const accountHandler = async (c: Context) => {
 
   const friends = Array.isArray(profile.friends) ? profile.friends : [];
 
+  // friends は [{id, username}, ...] の配列とする
+  const friendIds = friends.map((f: any) => f.id).filter(Boolean);
+
   let friendsFriends: Record<string, string[]> = {};
-  if (friends.length > 0) {
+  if (friendIds.length > 0) {
     const { data: rows, error: friendsError } = await supabase
       .from("profiles")
-      .select("username,friends")
-      .in("username", friends);
+      .select("id,username,friends")
+      .in("id", friendIds);
 
     if (friendsError) {
       return c.json({ success: false, message: "取得に失敗しました" }, 500);
     }
 
+    // rows は友だちのプロフィール。各々の friends は配列のオブジェクトなので、username の配列を返す
     friendsFriends = Object.fromEntries(
       (rows ?? []).map((r: any) => [
         r.username,
-        Array.isArray(r.friends) ? r.friends : [],
+        Array.isArray(r.friends)
+          ? r.friends.map((ff: any) => ff.username).filter(Boolean)
+          : [],
       ]),
     );
   }

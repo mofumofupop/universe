@@ -3,6 +3,7 @@ import { createSupabaseClient } from "../lib/supabase.js";
 import {
   getOptionalString,
   getOptionalStringArray,
+  getOptionalFriendArray,
   isRecord,
   isString,
 } from "../lib/validators.js";
@@ -59,7 +60,7 @@ export const registerHandler = async (c: Context) => {
     );
   }
 
-  const friends = getOptionalStringArray(body.friends);
+  const friends = getOptionalFriendArray(body.friends);
   if (friends === null) {
     return c.json({ success: false, message: "friends の形式が不正です" }, 400);
   }
