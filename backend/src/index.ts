@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { registerHandler } from "./routes/register";
+import { registerHandler } from "./routes/register.js";
 
 const app = new Hono();
 
