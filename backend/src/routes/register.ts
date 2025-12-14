@@ -21,29 +21,26 @@ type RegisterRequestBody = {
   password_hash?: unknown;
 };
 
-const getEnv = (key: keyof Env): string => {
+const getEnvFromProcess = (key: keyof Env): string | null => {
   const envFromProcess = (globalThis as unknown as { process?: any }).process
     ?.env?.[key] as string | undefined;
-
-  const value = envFromProcess;
-  if (!value) {
-    throw new Error(`Missing env: ${String(key)}`);
-  }
-  return value;
+  if (typeof envFromProcess === "string" && envFromProcess)
+    return envFromProcess;
+  return null;
 };
 
-const getRuntimeEnv = (c: Context, key: keyof Env): string => {
+const getRuntimeEnv = (c: Context, key: keyof Env): string | null => {
   const envFromContext = (c as any)?.env?.[key] as string | undefined;
   if (typeof envFromContext === "string" && envFromContext)
     return envFromContext;
-  return getEnv(key);
+  return getEnvFromProcess(key);
 };
 
 const createSupabaseClient = (c: Context) => {
-  return createClient(
-    getRuntimeEnv(c, "SUPABASE_URL"),
-    getRuntimeEnv(c, "SUPABASE_ANON_KEY"),
-  );
+  const url = getRuntimeEnv(c, "SUPABASE_URL");
+  const anonKey = getRuntimeEnv(c, "SUPABASE_ANON_KEY");
+  if (!url || !anonKey) return null;
+  return createClient(url, anonKey);
 };
 
 export const registerHandler = async (c: Context) => {
@@ -90,6 +87,16 @@ export const registerHandler = async (c: Context) => {
 
   const id = crypto.randomUUID();
   const supabase = createSupabaseClient(c);
+  if (!supabase) {
+    return c.json(
+      {
+        success: false,
+        message:
+          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
+      },
+      500,
+    );
+  }
 
   const { data, error } = await supabase
     .from("profiles")

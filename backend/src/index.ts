@@ -3,6 +3,11 @@ import { registerHandler } from "./routes/register";
 
 const app = new Hono();
 
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ success: false, message: "Internal Server Error" }, 500);
+});
+
 app.get("/", (c) => {
   return c.json({ message: "API is running" });
 });
