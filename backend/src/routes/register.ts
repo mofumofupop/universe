@@ -1,16 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
 import type { Context } from "hono";
+import { createSupabaseClient } from "../lib/supabase.js";
 import {
   getOptionalString,
   getOptionalStringArray,
   isRecord,
   isString,
 } from "../lib/validators.js";
-
-interface Env {
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-}
 
 type RegisterRequestBody = {
   username?: unknown;
@@ -20,28 +15,6 @@ type RegisterRequestBody = {
   social_links?: unknown;
   friends?: unknown;
   password_hash?: unknown;
-};
-
-const getEnvFromProcess = (key: keyof Env): string | null => {
-  const envFromProcess = (globalThis as unknown as { process?: any }).process
-    ?.env?.[key] as string | undefined;
-  if (typeof envFromProcess === "string" && envFromProcess)
-    return envFromProcess;
-  return null;
-};
-
-const getRuntimeEnv = (c: Context, key: keyof Env): string | null => {
-  const envFromContext = (c as any)?.env?.[key] as string | undefined;
-  if (typeof envFromContext === "string" && envFromContext)
-    return envFromContext;
-  return getEnvFromProcess(key);
-};
-
-const createSupabaseClient = (c: Context) => {
-  const url = getRuntimeEnv(c, "SUPABASE_URL");
-  const anonKey = getRuntimeEnv(c, "SUPABASE_ANON_KEY");
-  if (!url || !anonKey) return null;
-  return createClient(url, anonKey);
 };
 
 export const registerHandler = async (c: Context) => {
