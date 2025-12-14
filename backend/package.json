@@ -5,7 +5,9 @@
     "dev": "tsx watch src/server.ts",
     "dev:vercel": "vercel dev",
     "deploy": "vercel deploy --prod",
-    "format": "prettier --write ./src ./api"
+    "format": "prettier --write ./src ./api",
+    "test": "vitest",
+    "test:register": "vitest run tests/register.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",
@@ -14,10 +16,12 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "prettier": "^3.7.4",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3",
-    "vercel": "^50.0.1"
+    "vercel": "^50.0.1",
+    "vitest": "^4.0.15"
   }
 }
