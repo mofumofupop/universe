@@ -5,7 +5,7 @@ import {
   getOptionalStringArray,
   isRecord,
   isString,
-} from "../lib/validators";
+} from "../lib/validators.js";
 
 interface Env {
   SUPABASE_URL: string;
