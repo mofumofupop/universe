@@ -18,6 +18,7 @@ type RegisterRequestBody = {
   affiliation?: unknown;
   icon_url?: unknown;
   social_links?: unknown;
+  friends?: unknown;
   password_hash?: unknown;
 };
 
@@ -85,6 +86,11 @@ export const registerHandler = async (c: Context) => {
     );
   }
 
+  const friends = getOptionalStringArray(body.friends);
+  if (friends === null) {
+    return c.json({ success: false, message: "friends の形式が不正です" }, 400);
+  }
+
   const id = crypto.randomUUID();
   const supabase = createSupabaseClient(c);
   if (!supabase) {
@@ -107,6 +113,7 @@ export const registerHandler = async (c: Context) => {
       affiliation,
       icon_url,
       social_links,
+      friends,
       password_hash,
     })
     .select("id,username")
