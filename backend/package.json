@@ -7,7 +7,8 @@
     "deploy": "vercel deploy --prod",
     "format": "prettier --write ./src ./api",
     "test": "vitest",
-    "test:register": "vitest run tests/register.js"
+    "test:register": "vitest run tests/register.js",
+    "test:qr": "vitest run tests/qr.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",
