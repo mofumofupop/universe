@@ -1,6 +1,8 @@
 import axios from "axios";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import { sha256 } from "hono/utils/crypto";
+
 const BASE_URL =
   (typeof process.env.API_BASE_URL === "string" &&
     process.env.API_BASE_URL.trim()) ||
@@ -50,7 +52,7 @@ describe.sequential("POST /api/register", () => {
         affiliation: "Local",
         icon_url: "https://example.com/icon.png",
         social_links: ["https://example.com"],
-        password_hash: "dummy_sha256",
+        password_hash: await sha256("test"),
       });
 
       expect(res.status, JSON.stringify(res.data)).toBe(200);
@@ -75,13 +77,13 @@ describe.sequential("POST /api/register", () => {
 
     const first = await postRegister({
       username,
-      password_hash: "dummy_sha256",
+      password_hash: await sha256("test"),
     });
     expect(first.status, JSON.stringify(first.data)).toBe(200);
 
     const second = await postRegister({
       username,
-      password_hash: "dummy_sha256",
+      password_hash: await sha256("test"),
     });
     expect(second.status, JSON.stringify(second.data)).toBe(409);
     expect(second.data?.success).toBe(false);

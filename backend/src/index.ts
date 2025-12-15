@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import { registerHandler } from "./routes/register.js";
+import { accountHandler } from "./routes/account.js";
+import { qrHandler } from "./routes/qr.js";
 
 const app = new Hono();
 
@@ -13,5 +15,7 @@ app.get("/", (c) => {
 });
 
 app.post("/api/register", registerHandler);
+app.get("/api/account", accountHandler);
+app.post("/api/qr", qrHandler);
 
 export default app;
