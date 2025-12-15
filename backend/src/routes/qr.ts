@@ -26,10 +26,10 @@ export const qrHandler = async (c: Context) => {
     return c.json({ success: false, message: "不正なJSONです" }, 400);
   }
 
-  const uuid = (body as any).uuid;
+  const id = (body as any).id;
   const password_hash = (body as any).password_hash;
-  if (!isString(uuid) || !isUuidString(uuid)) {
-    return c.json({ success: false, message: "uuid が不正です" }, 400);
+  if (!isString(id) || !isUuidString(id)) {
+    return c.json({ success: false, message: "id が不正です" }, 400);
   }
   if (!isString(password_hash) || password_hash.trim() === "") {
     return c.json(
@@ -49,7 +49,7 @@ export const qrHandler = async (c: Context) => {
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("id,password_hash")
-    .eq("id", uuid)
+    .eq("id", id)
     .single();
   if (profileErr || !profile) {
     return c.json({ success: false, message: "認証に失敗しました" }, 401);
@@ -61,7 +61,7 @@ export const qrHandler = async (c: Context) => {
   const { data: existing, error: existingErr } = await supabase
     .from("qrs")
     .select("qr,created_at")
-    .eq("id", uuid)
+    .eq("id", id)
     .maybeSingle();
   if (existingErr) {
     return c.json({ success: false, message: "QR 取得に失敗しました" }, 500);
@@ -83,7 +83,7 @@ export const qrHandler = async (c: Context) => {
       const { data: updated, error: updateErr } = await supabase
         .from("qrs")
         .update({ qr: newQr, created_at: new Date().toISOString() })
-        .eq("id", uuid)
+        .eq("id", id)
         .select("qr,created_at")
         .single();
       if (!updateErr && updated) {
@@ -110,7 +110,7 @@ export const qrHandler = async (c: Context) => {
     const qr = randomString(28);
     const { data, error } = await supabase
       .from("qrs")
-      .insert({ id: uuid, qr })
+      .insert({ id: id, qr })
       .select("qr")
       .single();
     if (!error && data) {
