@@ -48,7 +48,7 @@ export const accountHandler = async (c: Context) => {
 
   const friends = Array.isArray(profile.friends) ? profile.friends : [];
 
-  // friends は [{id, username}, ...] の配列とする
+  // friends は [{id, username}, ...] の配列
   const friendIds = friends.map((f: any) => f.id).filter(Boolean);
 
   let friendsFriends: Record<string, string[]> = {};
@@ -62,7 +62,6 @@ export const accountHandler = async (c: Context) => {
       return c.json({ success: false, message: "取得に失敗しました" }, 500);
     }
 
-    // rows は友だちのプロフィール。各々の friends は配列のオブジェクトなので、username の配列を返す
     friendsFriends = Object.fromEntries(
       (rows ?? []).map((r: any) => [
         r.username,
