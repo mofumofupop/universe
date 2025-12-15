@@ -8,7 +8,8 @@
     "format": "prettier --write ./src ./api",
     "test": "vitest",
     "test:register": "vitest run tests/register.js",
-    "test:qr": "vitest run tests/qr.js"
+    "test:qr": "vitest run tests/qr.js",
+    "test:exchange": "vitest run tests/exchange.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",
