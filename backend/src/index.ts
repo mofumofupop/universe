@@ -4,6 +4,7 @@ import { accountHandler } from "./routes/account.js";
 import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
 import { iconHandler } from "./routes/icon.js";
+import { userHandler } from "./routes/user.js";
 
 const app = new Hono();
 
@@ -17,9 +18,10 @@ app.get("/", (c) => {
 });
 
 app.post("/api/register", registerHandler);
-app.get("/api/account", accountHandler);
+app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);
 app.post("/api/exchange", exchangeHandler);
 app.post("/api/icon", iconHandler);
+app.get("/api/user", userHandler);
 
 export default app;
