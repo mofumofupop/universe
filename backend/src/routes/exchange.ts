@@ -24,10 +24,7 @@ export const exchangeHandler = async (c: Context) => {
   const hasPassword = isString(password_hash) && password_hash.trim() !== "";
 
   if (hasId !== hasPassword) {
-    return c.json(
-      { success: false, message: "不正なリクエストです" },
-      400,
-    );
+    return c.json({ success: false, message: "不正なリクエストです" }, 400);
   }
 
   const isViewMode = !hasId && !hasPassword;

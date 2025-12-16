@@ -17,7 +17,7 @@ app.get("/", (c) => {
 });
 
 app.post("/api/register", registerHandler);
-app.get("/api/account", accountHandler);
+app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);
 app.post("/api/exchange", exchangeHandler);
 app.post("/api/icon", iconHandler);
