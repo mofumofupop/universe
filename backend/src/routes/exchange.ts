@@ -17,15 +17,12 @@ export const exchangeHandler = async (c: Context) => {
   const password_hash = (body as any).password_hash;
   const qr = (body as any).qr;
 
-  // qr は必須
   if (!isString(qr) || qr.trim() === "")
     return c.json({ success: false, message: "qr が不足しています" }, 400);
 
-  // id と password_hash の組み合わせをチェック
   const hasId = isString(id) && isUuidString(id);
   const hasPassword = isString(password_hash) && password_hash.trim() !== "";
 
-  // 片方だけ指定されている場合はエラー
   if (hasId !== hasPassword) {
     return c.json(
       { success: false, message: "不正なリクエストです" },
@@ -33,7 +30,6 @@ export const exchangeHandler = async (c: Context) => {
     );
   }
 
-  // 情報取得モード（id と password_hash が両方未指定）
   const isViewMode = !hasId && !hasPassword;
 
   const supabase = createSupabaseClient(c);
@@ -43,7 +39,6 @@ export const exchangeHandler = async (c: Context) => {
       500,
     );
 
-  // 認証（名刺交換モードの場合のみ）
   let me: any = null;
   if (!isViewMode) {
     const { data: meData, error: meErr } = await supabase
