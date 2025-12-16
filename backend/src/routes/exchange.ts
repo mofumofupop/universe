@@ -16,15 +16,21 @@ export const exchangeHandler = async (c: Context) => {
   const id = (body as any).id;
   const password_hash = (body as any).password_hash;
   const qr = (body as any).qr;
-  if (!isString(id) || !isUuidString(id))
-    return c.json({ success: false, message: "id が不正です" }, 400);
-  if (!isString(password_hash) || password_hash.trim() === "")
-    return c.json(
-      { success: false, message: "password_hash が不足しています" },
-      400,
-    );
+
   if (!isString(qr) || qr.trim() === "")
     return c.json({ success: false, message: "qr が不足しています" }, 400);
+
+  const hasId = isString(id) && isUuidString(id);
+  const hasPassword = isString(password_hash) && password_hash.trim() !== "";
+
+  if (hasId !== hasPassword) {
+    return c.json(
+      { success: false, message: "不正なリクエストです" },
+      400,
+    );
+  }
+
+  const isViewMode = !hasId && !hasPassword;
 
   const supabase = createSupabaseClient(c);
   if (!supabase)
@@ -33,15 +39,19 @@ export const exchangeHandler = async (c: Context) => {
       500,
     );
 
-  const { data: me, error: meErr } = await supabase
-    .from("profiles")
-    .select("id,username,password_hash,friends")
-    .eq("id", id)
-    .single();
-  if (meErr || !me)
-    return c.json({ success: false, message: "認証に失敗しました" }, 401);
-  if ((me as any).password_hash !== password_hash)
-    return c.json({ success: false, message: "認証に失敗しました" }, 401);
+  let me: any = null;
+  if (!isViewMode) {
+    const { data: meData, error: meErr } = await supabase
+      .from("profiles")
+      .select("id,username,password_hash,friends")
+      .eq("id", id)
+      .single();
+    if (meErr || !meData)
+      return c.json({ success: false, message: "認証に失敗しました" }, 401);
+    if ((meData as any).password_hash !== password_hash)
+      return c.json({ success: false, message: "認証に失敗しました" }, 401);
+    me = meData;
+  }
 
   const { data: qrRow, error: qrErr } = await supabase
     .from("qrs")
@@ -61,7 +71,7 @@ export const exchangeHandler = async (c: Context) => {
     );
 
   const otherId = qrRow.id as string;
-  if (otherId === id)
+  if (!isViewMode && otherId === id)
     return c.json(
       { success: false, message: "自分自身との交換はできません" },
       400,
@@ -77,6 +87,16 @@ export const exchangeHandler = async (c: Context) => {
       { success: false, message: "相手のプロフィールが見つかりません" },
       400,
     );
+
+  if (isViewMode) {
+    return c.json({
+      success: true,
+      message: "名刺を見せてもらいました",
+      id: null,
+      username: null,
+      new: { id: other.id, username: other.username },
+    });
+  }
 
   const meFriends = Array.isArray((me as any).friends)
     ? (me as any).friends
