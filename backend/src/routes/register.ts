@@ -51,7 +51,8 @@ export const registerHandler = async (c: Context) => {
 
   const name = getOptionalString(body.name);
   const affiliation = getOptionalString(body.affiliation);
-  const icon_url = getOptionalString(body.icon_url);
+  const icon_url = null;
+  // const icon_url = getOptionalString(body.icon_url); // /api/icon に分離
   const social_links = getOptionalStringArray(body.social_links);
   if (social_links === null) {
     return c.json(

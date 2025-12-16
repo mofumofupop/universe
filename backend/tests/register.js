@@ -50,7 +50,6 @@ describe.sequential("POST /api/register", () => {
         username,
         name: "テストユーザー",
         affiliation: "Local",
-        icon_url: "https://example.com/icon.png",
         social_links: ["https://example.com"],
         password_hash: await sha256("test"),
       });

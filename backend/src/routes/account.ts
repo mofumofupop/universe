@@ -39,7 +39,7 @@ export const accountHandler = async (c: Context) => {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,username,friends,password_hash")
+    .select("id,username,icon_url,friends,password_hash")
     .eq("id", id)
     .maybeSingle();
 
@@ -77,6 +77,7 @@ export const accountHandler = async (c: Context) => {
     message: "情報を送信します",
     id: profile.id,
     username: profile.username,
+    icon_url: profile.icon_url,
     friends,
     friends_friends: friendsFriends,
   });
