@@ -62,7 +62,10 @@ export const registerHandler = async (c: Context) => {
   }
   if (social_links.length < 1 || social_links.length > 5) {
     return c.json(
-      { success: false, message: "social_links は1個以上5個以下で指定してください" },
+      {
+        success: false,
+        message: "social_links は1個以上5個以下で指定してください",
+      },
       400,
     );
   }
