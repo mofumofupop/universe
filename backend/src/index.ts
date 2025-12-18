@@ -5,6 +5,7 @@ import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
 import { iconHandler } from "./routes/icon.js";
 import { userHandler } from "./routes/user.js";
+import { loginHandler } from "./routes/login.js";
 
 const app = new Hono();
 
@@ -18,6 +19,7 @@ app.get("/", (c) => {
 });
 
 app.post("/api/register", registerHandler);
+app.post("/api/login", loginHandler);
 app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);
 app.post("/api/exchange", exchangeHandler);
