@@ -51,11 +51,21 @@ export const registerHandler = async (c: Context) => {
 
   const name = getOptionalString(body.name);
   const affiliation = getOptionalString(body.affiliation);
-  const icon_url = getOptionalString(body.icon_url);
+  const icon_url = null;
+  // const icon_url = getOptionalString(body.icon_url); // /api/icon に分離
   const social_links = getOptionalStringArray(body.social_links);
   if (social_links === null) {
     return c.json(
       { success: false, message: "social_links の形式が不正です" },
+      400,
+    );
+  }
+  if (social_links.length < 1 || social_links.length > 5) {
+    return c.json(
+      {
+        success: false,
+        message: "social_links は1個以上5個以下で指定してください",
+      },
       400,
     );
   }

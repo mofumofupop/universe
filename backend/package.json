@@ -8,17 +8,21 @@
     "format": "prettier --write ./src ./api",
     "test": "vitest",
     "test:register": "vitest run tests/register.js",
-    "test:qr": "vitest run tests/qr.js"
+    "test:qr": "vitest run tests/qr.js",
+    "test:exchange": "vitest run tests/exchange.js",
+    "test:icon": "vitest run tests/icon.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.7",
     "@supabase/supabase-js": "^2.87.1",
-    "hono": "^4.10.8"
+    "hono": "^4.10.8",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
+    "form-data": "^4.0.5",
     "prettier": "^3.7.4",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3",

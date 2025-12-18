@@ -12,14 +12,19 @@ const badRequest = (c: Context) => {
 };
 
 export const accountHandler = async (c: Context) => {
-  let body: AccountRequestBody | null = null;
+  let body: AccountRequestBody;
   try {
     const json = await c.req.json();
-    if (isRecord(json)) body = json;
-  } catch {}
+    if (!isRecord(json)) {
+      return c.json({ success: false, message: "不正なパラメーターです" }, 400);
+    }
+    body = json;
+  } catch {
+    return c.json({ success: false, message: "不正なJSONです" }, 400);
+  }
 
-  const id = body?.id ?? c.req.query("id");
-  const password_hash = body?.password_hash ?? c.req.query("password_hash");
+  const id = body.id;
+  const password_hash = body.password_hash;
 
   if (!isString(id) || !isUuidString(id)) return badRequest(c);
   if (!isString(password_hash) || password_hash.trim() === "")
@@ -39,7 +44,7 @@ export const accountHandler = async (c: Context) => {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,username,friends,password_hash")
+    .select("id,username,icon_url,friends,password_hash")
     .eq("id", id)
     .maybeSingle();
 
@@ -77,6 +82,7 @@ export const accountHandler = async (c: Context) => {
     message: "情報を送信します",
     id: profile.id,
     username: profile.username,
+    icon_url: profile.icon_url,
     friends,
     friends_friends: friendsFriends,
   });
