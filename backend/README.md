@@ -25,7 +25,7 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 npm run dev
 ```
 
-Local dev server: `http://localhost:3000`
+Local dev server: `http://localhost:3001`
 
 ## API
 
@@ -42,8 +42,8 @@ Response:
 PowerShell `curl` is an alias, so use `curl.exe`.
 
 ```powershell
-curl.exe -X POST http://localhost:3000/api/XXXXXX
-curl.exe -X GET http://localhost:3000/api/XXXXXX
+curl.exe -X POST http://localhost:3001/api/XXXXXX
+curl.exe -X GET http://localhost:3001/api/XXXXXX
 ```
 
 ## Format
