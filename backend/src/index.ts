@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { registerHandler } from "./routes/register.js";
 import { accountHandler } from "./routes/account.js";
 import { qrHandler } from "./routes/qr.js";
@@ -7,10 +6,16 @@ import { exchangeHandler } from "./routes/exchange.js";
 import { iconHandler } from "./routes/icon.js";
 import { userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
+import { cors } from "hono/cors";
 
 const app = new Hono();
 
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: "*",
+  })
+);
 
 app.onError((err, c) => {
   console.error(err);
