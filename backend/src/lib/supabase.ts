@@ -24,6 +24,14 @@ const getRuntimeEnv = (c: Context, key: keyof Env): string | null => {
 export const createSupabaseClient = (c: Context) => {
   const url = getRuntimeEnv(c, "SUPABASE_URL");
   const anonKey = getRuntimeEnv(c, "SUPABASE_ANON_KEY");
-  if (!url || !anonKey) return null;
+  if (!url || !anonKey) {
+    if (!url) {
+      console.error("SUPABASE_URL is missing or undefined");
+    }
+    if (!anonKey) {
+      console.error("SUPABASE_ANON_KEY is missing or undefined");
+    }
+    return null;
+  }
   return createClient(url, anonKey);
 };

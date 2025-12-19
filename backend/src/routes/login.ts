@@ -40,11 +40,16 @@ export const loginHandler = async (c: Context) => {
 
   const supabase = createSupabaseClient(c);
   if (!supabase) {
+    const url = (c as any)?.env?.SUPABASE_URL || (globalThis as any)?.process?.env?.SUPABASE_URL;
+    const anonKey = (c as any)?.env?.SUPABASE_ANON_KEY || (globalThis as any)?.process?.env?.SUPABASE_ANON_KEY;
+    let missing = [];
+    if (!url) missing.push('SUPABASE_URL');
+    if (!anonKey) missing.push('SUPABASE_ANON_KEY');
     return c.json(
       {
         success: false,
         message:
-          "サーバーエラー",
+          `サーバーエラー: ${missing.length ? missing.join(',') + ' が未設定です' : '原因不明'}`,
       },
       500,
     );
