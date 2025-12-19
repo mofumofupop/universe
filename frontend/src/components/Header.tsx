@@ -1,4 +1,8 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { LoginForm } from "./LoginForm";
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -22,6 +26,8 @@ const Logo = ({ className }: { className?: string }) => (
 );
 
 export default function Header({ children, className }: HeaderProps) {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
   return (
     <header className={`fixed top-0 left-0 right-0 w-full bg-gradient-to-b from-gray-900 to-gray-900/50 pl-8 pr-8 py-0 z-50 ${className || ''}`}>
       <div className="w-full flex items-center justify-between">
@@ -30,12 +36,24 @@ export default function Header({ children, className }: HeaderProps) {
           <Logo className="h-20 w-auto" />
         </div>
 
-        {/* Children */}
-        {children && (
-          <div className="flex items-center gap-4">
-            {children}
-          </div>
-        )}
+        {/* Children and Login Button */}
+        <div className="flex items-center gap-4 relative">
+          {children}
+          
+          <Button 
+            className="bg-white hover:bg-gray-100 text-gray-900 rounded-md px-6 py-2 font-medium border-none"
+            onClick={() => setIsLoginOpen(!isLoginOpen)}
+          >
+            Log in
+          </Button>
+
+          {/* Login Form Dropdown */}
+          {isLoginOpen && (
+            <div className="fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 z-50">
+              <LoginForm />
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
