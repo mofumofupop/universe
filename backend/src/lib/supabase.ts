@@ -1,29 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
-import type { Context } from "hono";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-interface Env {
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-}
+let supabase: SupabaseClient | null = null;
 
-const getEnvFromProcess = (key: keyof Env): string | null => {
-  const envFromProcess = (globalThis as unknown as { process?: any }).process
-    ?.env?.[key] as string | undefined;
-  if (typeof envFromProcess === "string" && envFromProcess)
-    return envFromProcess;
-  return null;
-};
+const getSupabaseClient = () => {
+  if (supabase) {
+    return supabase;
+  }
 
-const getRuntimeEnv = (c: Context, key: keyof Env): string | null => {
-  const envFromContext = (c as any)?.env?.[key] as string | undefined;
-  if (typeof envFromContext === "string" && envFromContext)
-    return envFromContext;
-  return getEnvFromProcess(key);
-};
+  const url = process.env.SUPABASE_URL;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
 
-export const createSupabaseClient = (c: Context) => {
-  const url = getRuntimeEnv(c, "SUPABASE_URL");
-  const anonKey = getRuntimeEnv(c, "SUPABASE_ANON_KEY");
   if (!url || !anonKey) {
     if (!url) {
       console.error("SUPABASE_URL is missing or undefined");
@@ -33,5 +19,14 @@ export const createSupabaseClient = (c: Context) => {
     }
     return null;
   }
-  return createClient(url, anonKey);
+  supabase = createClient(url, anonKey);
+  return supabase;
+};
+
+export const createSupabaseClient = () => {
+    const client = getSupabaseClient();
+    if (!client) {
+        throw new Error("Failed to create Supabase client");
+    }
+    return client;
 };

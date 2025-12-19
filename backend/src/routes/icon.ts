@@ -90,7 +90,7 @@ export const iconHandler = async (c: Context) => {
     return errorResponse(c, "icon (ファイル) が不足しています", 400);
   }
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return errorResponse(c, "サーバー設定が不足しています", 500);
   }

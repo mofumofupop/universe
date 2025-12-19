@@ -30,7 +30,7 @@ export const userHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       {

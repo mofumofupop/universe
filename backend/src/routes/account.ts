@@ -30,7 +30,7 @@ export const accountHandler = async (c: Context) => {
   if (!isString(password_hash) || password_hash.trim() === "")
     return badRequest(c);
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       {

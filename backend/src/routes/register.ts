@@ -82,7 +82,7 @@ export const registerHandler = async (c: Context) => {
   }
 
   const id = crypto.randomUUID();
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       {

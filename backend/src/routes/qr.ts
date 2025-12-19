@@ -38,7 +38,7 @@ export const qrHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       { success: false, message: "サーバー設定が不足しています" },
