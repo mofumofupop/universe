@@ -1,3 +1,17 @@
+// newオブジェクトの型定義
+type ExchangeProfile = {
+  id: string;
+  username: string;
+  name?: string;
+};
+
+type ExchangeResponse = {
+  success: boolean;
+  message: string;
+  id: string | null;
+  username: string | null;
+  new: ExchangeProfile | null;
+};
 import type { Context } from "hono";
 import { createSupabaseClient } from "../lib/supabase.js";
 import { isRecord, isString, isUuidString } from "../lib/validators.js";
@@ -40,7 +54,7 @@ export const exchangeHandler = async (c: Context) => {
   if (!isViewMode) {
     const { data: meData, error: meErr } = await supabase
       .from("profiles")
-      .select("id,username,password_hash,friends")
+      .select("id,username,password_hash,friends,name")
       .eq("id", id)
       .single();
     if (meErr || !meData)
@@ -76,7 +90,7 @@ export const exchangeHandler = async (c: Context) => {
 
   const { data: other, error: otherErr } = await supabase
     .from("profiles")
-    .select("id,username,friends")
+    .select("id,username,friends,name")
     .eq("id", otherId)
     .single();
   if (otherErr || !other)
@@ -91,19 +105,19 @@ export const exchangeHandler = async (c: Context) => {
       message: "名刺を見せてもらいました",
       id: null,
       username: null,
-      new: { id: other.id, username: other.username },
+      new: { id: other.id, username: other.username, name: other.name },
     });
   }
 
   const meFriends = Array.isArray((me as any).friends)
-    ? (me as any).friends
+    ? ((me as any).friends as ExchangeProfile[])
     : [];
   const otherFriends = Array.isArray((other as any).friends)
-    ? (other as any).friends
+    ? ((other as any).friends as ExchangeProfile[])
     : [];
 
-  const meFriendObj = { id: other.id, username: other.username };
-  const otherFriendObj = { id: me.id, username: me.username };
+  const meFriendObj: ExchangeProfile = { id: other.id, username: other.username, name: other.name };
+  const otherFriendObj: ExchangeProfile = { id: me.id, username: me.username, name: me.name };
 
   const addIfMissing = (arr: any[], obj: any) => {
     return arr.some((f) => f && f.id === obj.id) ? arr : [...arr, obj];
@@ -145,7 +159,7 @@ export const exchangeHandler = async (c: Context) => {
         message: "名刺を交換しました",
         id: me.id,
         username: me.username,
-        new: { id: other.id, username: other.username },
+        new: { id: other.id, username: other.username, name: other.name },
       },
       200,
     );
@@ -157,7 +171,7 @@ export const exchangeHandler = async (c: Context) => {
       message: "名刺を交換しました",
       id: me.id,
       username: me.username,
-      new: { id: other.id, username: other.username },
+      new: { id: other.id, username: other.username, name: other.name },
     },
     200,
   );
