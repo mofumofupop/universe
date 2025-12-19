@@ -10,8 +10,7 @@ import iconHandler from "./routes/icon.js";
 const app = new Hono();
 
 app.use('*', async (c, next) => {
-  const origin = c.req.header('Origin') || '*';
-  c.header('Access-Control-Allow-Origin', origin);
+  c.header('Access-Control-Allow-Origin', '*');
   c.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   c.header('Access-Control-Allow-Credentials', 'true');
