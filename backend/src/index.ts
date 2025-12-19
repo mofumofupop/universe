@@ -6,15 +6,11 @@ import { exchangeHandler } from "./routes/exchange.js";
 import { iconHandler } from "./routes/icon.js";
 import { userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
-// import { cors } from "hono/cors";
+import { cors } from "hono/cors";
+
 const app = new Hono();
 
-// app.use(
-//   "*",
-//   cors({
-//     origin: "*",
-//   })
-// );
+app.use("*", cors());
 
 app.onError((err, c) => {
   console.error(err);
