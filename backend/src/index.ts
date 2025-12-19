@@ -6,22 +6,30 @@ import { exchangeHandler } from "./routes/exchange.js";
 import { userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
 import iconHandler from "./routes/icon.js";
+import { cors } from "hono/cors";
 
 const app = new Hono();
 
-app.use('*', async (c, next) => {
-  c.header('Access-Control-Allow-Origin', '*');
-  c.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT');
-  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  c.header('Access-Control-Allow-Credentials', 'true');
-  c.header('Vary', 'Origin');
+app.use("*", cors({
+  origin: "*",
+  allowHeaders: ["Content-Type", "Authorization"],
+  allowMethods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+}));
 
-  if (c.req.method === 'OPTIONS') {
-    return c.body(null, 204);
-  }
+// app.use('*', async (c, next) => {
+//   c.header('Access-Control-Allow-Origin', '*');
+//   c.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT');
+//   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+//   c.header('Access-Control-Allow-Credentials', 'true');
+//   c.header('Vary', 'Origin');
 
-  await next();
-});
+//   if (c.req.method === 'OPTIONS') {
+//     return c.body(null, 204);
+//   }
+
+//   await next();
+// });
 
 app.onError((err, c) => {
   console.error(err);
