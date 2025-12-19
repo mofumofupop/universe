@@ -29,7 +29,7 @@ export const exchangeHandler = async (c: Context) => {
 
   const isViewMode = !hasId && !hasPassword;
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase)
     return c.json(
       { success: false, message: "サーバー設定が不足しています" },

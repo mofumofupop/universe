@@ -30,7 +30,7 @@ export const accountHandler = async (c: Context) => {
   if (!isString(password_hash) || password_hash.trim() === "")
     return badRequest(c);
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       {
@@ -44,7 +44,7 @@ export const accountHandler = async (c: Context) => {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,username,icon_url,friends,password_hash")
+    .select("id,username,name,icon_url,friends,password_hash")
     .eq("id", id)
     .maybeSingle();
 
@@ -82,6 +82,7 @@ export const accountHandler = async (c: Context) => {
     message: "情報を送信します",
     id: profile.id,
     username: profile.username,
+    name: profile.name,
     icon_url: profile.icon_url,
     friends,
     friends_friends: friendsFriends,

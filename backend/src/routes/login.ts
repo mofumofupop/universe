@@ -38,13 +38,13 @@ export const loginHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient(c);
+  const supabase = createSupabaseClient();
   if (!supabase) {
     return c.json(
       {
         success: false,
         message:
-          "サーバーエラー",
+          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
       },
       500,
     );
