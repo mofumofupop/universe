@@ -42,6 +42,12 @@ export const registerHandler = async (c: Context) => {
       400,
     );
   }
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    return c.json(
+      { success: false, message: "ユーザー名は英小文字、数字、アンダーバーのみ使用できます" },
+      400,
+    );
+  }
   if (!isString(password_hash) || password_hash.trim() === "") {
     return c.json(
       { success: false, message: "パラメーターが不足しています" },
