@@ -3,13 +3,12 @@ import { registerHandler } from "./routes/register.js";
 import { accountHandler } from "./routes/account.js";
 import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
-// import { iconHandler } from "./routes/icon.js"; // Eager import removed
 import { userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
+import iconHandler from "./routes/icon.js";
 
 const app = new Hono();
 
-// Custom CORS Middleware to avoid Vercel runtime issues
 app.use('*', async (c, next) => {
   const origin = c.req.header('Origin') || '*';
   c.header('Access-Control-Allow-Origin', origin);
@@ -39,13 +38,7 @@ app.post("/api/login", loginHandler);
 app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);
 app.post("/api/exchange", exchangeHandler);
-
-// Lazily import the icon handler to isolate the sharp library
-app.post("/api/icon", async (c) => {
-  const { iconHandler } = await import("./routes/icon.js");
-  return iconHandler(c);
-});
-
+app.post("/api/icon", iconHandler);
 app.get("/api/user", userHandler);
 
 export default app;
