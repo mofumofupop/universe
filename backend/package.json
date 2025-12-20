@@ -5,7 +5,7 @@
     "dev": "tsx watch src/server.ts",
     "dev:vercel": "vercel dev",
     "deploy": "vercel deploy --prod",
-    "format": "prettier --write ./src ./api",
+    "format": "prettier --write ./src",
     "test": "vitest",
     "test:register": "vitest run tests/register.js",
     "test:qr": "vitest run tests/qr.js",

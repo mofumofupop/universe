@@ -116,8 +116,16 @@ export const exchangeHandler = async (c: Context) => {
     ? ((other as any).friends as ExchangeProfile[])
     : [];
 
-  const meFriendObj: ExchangeProfile = { id: other.id, username: other.username, name: other.name };
-  const otherFriendObj: ExchangeProfile = { id: me.id, username: me.username, name: me.name };
+  const meFriendObj: ExchangeProfile = {
+    id: other.id,
+    username: other.username,
+    name: other.name,
+  };
+  const otherFriendObj: ExchangeProfile = {
+    id: me.id,
+    username: me.username,
+    name: me.name,
+  };
 
   const addIfMissing = (arr: any[], obj: any) => {
     return arr.some((f) => f && f.id === obj.id) ? arr : [...arr, obj];

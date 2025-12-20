@@ -56,7 +56,7 @@ export const accountHandler = async (c: Context) => {
   // friends は [{id, username}, ...] の配列
   const friendIds = friends.map((f: any) => f.id).filter(Boolean);
 
-  let friendsFriends: Record<string, string[]> = {};
+  let friendsFriends: Record<string, { id: string; username: string }[]> = {};
   if (friendIds.length > 0) {
     const { data: rows, error: friendsError } = await supabase
       .from("profiles")
@@ -69,9 +69,17 @@ export const accountHandler = async (c: Context) => {
 
     friendsFriends = Object.fromEntries(
       (rows ?? []).map((r: any) => [
-        r.username,
+        r.id,
         Array.isArray(r.friends)
-          ? r.friends.map((ff: any) => ff.username).filter(Boolean)
+          ? r.friends
+              .filter(
+                (ff: any) =>
+                  isString(ff?.id) &&
+                  isUuidString(ff.id) &&
+                  isString(ff?.username) &&
+                  ff.username.trim() !== "",
+              )
+              .map((ff: any) => ({ id: ff.id, username: ff.username }))
           : [],
       ]),
     );

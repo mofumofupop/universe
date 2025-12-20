@@ -10,12 +10,15 @@ import { cors } from "hono/cors";
 
 const app = new Hono();
 
-app.use("*", cors({
-  origin: "*",
-  allowHeaders: ["Content-Type", "Authorization"],
-  allowMethods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-}));
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
 
 // app.use('*', async (c, next) => {
 //   c.header('Access-Control-Allow-Origin', '*');

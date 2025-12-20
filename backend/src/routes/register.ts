@@ -44,7 +44,10 @@ export const registerHandler = async (c: Context) => {
   }
   if (!/^[a-z0-9_]+$/.test(username)) {
     return c.json(
-      { success: false, message: "ユーザー名は英小文字、数字、アンダーバーのみ使用できます" },
+      {
+        success: false,
+        message: "ユーザー名は英小文字、数字、アンダーバーのみ使用できます",
+      },
       400,
     );
   }

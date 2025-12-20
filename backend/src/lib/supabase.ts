@@ -24,9 +24,9 @@ const getSupabaseClient = () => {
 };
 
 export const createSupabaseClient = () => {
-    const client = getSupabaseClient();
-    if (!client) {
-        throw new Error("Failed to create Supabase client");
-    }
-    return client;
+  const client = getSupabaseClient();
+  if (!client) {
+    throw new Error("Failed to create Supabase client");
+  }
+  return client;
 };

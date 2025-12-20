@@ -12,10 +12,7 @@ export const loginHandler = async (c: Context) => {
   try {
     const json = await c.req.json();
     if (!isRecord(json)) {
-      return c.json(
-        { success: false, message: "不正なパラメーターです" },
-        400,
-      );
+      return c.json({ success: false, message: "不正なパラメーターです" }, 400);
     }
     body = json;
   } catch {
@@ -57,17 +54,11 @@ export const loginHandler = async (c: Context) => {
     .maybeSingle();
 
   if (error || !profile) {
-    return c.json(
-      { success: false, message: "ログインに失敗しました" },
-      401,
-    );
+    return c.json({ success: false, message: "ログインに失敗しました" }, 401);
   }
 
   if (profile.password_hash !== password_hash) {
-    return c.json(
-      { success: false, message: "ログインに失敗しました" },
-      401,
-    );
+    return c.json({ success: false, message: "ログインに失敗しました" }, 401);
   }
 
   return c.json({
