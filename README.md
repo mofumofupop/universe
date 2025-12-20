@@ -85,6 +85,8 @@ Supabaseを用いてデータベースを設計しています。ユーザー登
 - Hono
 - React
 - Next.js
+- html5-qrcode
+- react.qrcode
 - TailwindCSS
 - Vitest(テスト)
 
@@ -93,7 +95,8 @@ Supabaseを用いてデータベースを設計しています。ユーザー登
 - GitHub
 - Shadch/ui
 - Supabase
-- TailwindCSS
 - Vercel
 - VSCode
 - GitHub Copilot
+- Prettier
+- ESLint
