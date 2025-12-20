@@ -1,19 +1,19 @@
-import { SocialIcon } from './SocialIcon';
-import type { User } from '@/types/User'; 
+import { SocialIcon } from "./SocialIcon";
+import type { User } from "@/types/User";
 
 interface SocialLinksRowProps {
-  links: User['social_links'];
+  links: User["social_links"];
 }
 
 export const SocialLinksRow = ({ links }: SocialLinksRowProps) => {
   const MAX_SLOTS = 5;
   const paddedLinks = [...links];
   while (paddedLinks.length < MAX_SLOTS) {
-    paddedLinks.push(null as unknown as string); 
+    paddedLinks.push(null as unknown as string);
   }
 
   return (
-    <div className="grid grid-cols-5 gap-0 w-full px-4 items-start">
+    <div className="grid grid-cols-5 gap-1 w-[80%] mx-auto items-start">
       {paddedLinks.slice(0, MAX_SLOTS).map((link, index) => {
         const isLowPosition = index % 2 !== 0;
 
@@ -21,7 +21,7 @@ export const SocialLinksRow = ({ links }: SocialLinksRowProps) => {
           <div
             key={index}
             className={`w-full aspect-square transition-all duration-500 ${
-              isLowPosition ? 'mt-[50%]' : 'mt-0' 
+              isLowPosition ? "mt-[40%]" : "mt-0"
             }`}
           >
             <SocialIcon url={link} />
