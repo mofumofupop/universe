@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import { createSupabaseClient } from "../lib/supabase.js";
 import {
   getOptionalString,
-  getOptionalStringArray,
+  getOptionalUrlArray,
   getOptionalFriendArray,
   isRecord,
   isString,
@@ -51,6 +51,12 @@ export const registerHandler = async (c: Context) => {
       400,
     );
   }
+  if (username.length > 15) {
+    return c.json(
+      { success: false, message: "ユーザー名は15文字以内で指定してください" },
+      400,
+    );
+  }
   if (!isString(password_hash) || password_hash.trim() === "") {
     return c.json(
       { success: false, message: "パラメーターが不足しています" },
@@ -62,7 +68,7 @@ export const registerHandler = async (c: Context) => {
   const affiliation = getOptionalString(body.affiliation);
   const icon_url = null;
   // const icon_url = getOptionalString(body.icon_url); // /api/icon に分離
-  const social_links = getOptionalStringArray(body.social_links);
+  const social_links = getOptionalUrlArray(body.social_links);
   if (social_links === null) {
     return c.json(
       { success: false, message: "social_links の形式が不正です" },

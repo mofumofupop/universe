@@ -26,6 +26,26 @@ export const getOptionalStringArray = (value: unknown): string[] | null => {
   return strings;
 };
 
+export const getOptionalUrlArray = (value: unknown): string[] | null => {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) return null;
+  const arr: string[] = [];
+  for (const v of value) {
+    if (typeof v !== "string") return null;
+    const s = v.trim();
+    // Must start with http:// or https://
+    if (!/^https?:\/\//.test(s)) return null;
+    try {
+      const u = new URL(s);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    } catch {
+      return null;
+    }
+    arr.push(s);
+  }
+  return arr;
+};
+
 export type FriendObject = { id: string; username: string };
 
 export const isFriendObject = (value: unknown): value is FriendObject => {
