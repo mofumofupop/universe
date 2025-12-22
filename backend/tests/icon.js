@@ -80,6 +80,32 @@ describe("POST /api/icon", () => {
       );
       expect(acc.status).toBe(200);
       expect(typeof acc.data?.icon_url).toBe("string");
+
+      // upload another icon (simulate update) — should succeed and still provide icon_url
+      const buffer2 = buffer; // reuse same buffer if only one test image available
+      const form2 = new FormData();
+      form2.append("id", id);
+      form2.append("password_hash", passwordHash);
+      form2.append("icon", buffer2, {
+        filename: `icon2${path.extname(filePath)}`,
+        contentType,
+      });
+
+      const res2 = await client.post("/api/icon", form2, {
+        headers: form2.getHeaders(),
+        maxBodyLength: Infinity,
+      });
+
+      expect(res2.status).toBe(200);
+      expect(res2.data?.success).toBe(true);
+      expect(typeof res2.data?.icon_url).toBe("string");
+
+      // verify account endpoint still returns an icon_url
+      const acc2 = await client.get(
+        `/api/account?id=${encodeURIComponent(id)}&password_hash=${encodeURIComponent(passwordHash)}`,
+      );
+      expect(acc2.status).toBe(200);
+      expect(typeof acc2.data?.icon_url).toBe("string");
     },
   );
 });

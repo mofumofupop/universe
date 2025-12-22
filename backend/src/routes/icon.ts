@@ -122,9 +122,22 @@ export const iconHandler = async (c: Context) => {
   const filename = `${id}.png`;
 
   try {
+    // try to remove existing file first so the new file is a fresh upload
+    try {
+      const { error: removeErr } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .remove([filename]);
+      if (removeErr) {
+        // ignore not found errors; log others
+        console.warn("icon remove warning:", removeErr);
+      }
+    } catch (err) {
+      console.warn("icon remove exception:", err);
+    }
+
     const upload = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filename, processed, { contentType: "image/png", upsert: true });
+      .upload(filename, processed, { contentType: "image/png", upsert: false });
 
     if (upload.error) {
       return errorResponse(

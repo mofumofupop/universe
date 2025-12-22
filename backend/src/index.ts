@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { registerHandler } from "./routes/register.js";
+import { changeHandler } from "./routes/change.js";
 import { accountHandler } from "./routes/account.js";
 import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
@@ -44,6 +45,7 @@ app.get("/", (c) => {
 });
 
 app.post("/api/register", registerHandler);
+app.post("/api/change", changeHandler);
 app.post("/api/login", loginHandler);
 app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);
