@@ -3,7 +3,6 @@ import { createSupabaseClient } from "../lib/supabase.js";
 import {
   getOptionalString,
   getOptionalUrlArray,
-  getOptionalFriendArray,
   isRecord,
   isString,
 } from "../lib/validators.js";
@@ -85,11 +84,6 @@ export const registerHandler = async (c: Context) => {
     );
   }
 
-  const friends = getOptionalFriendArray(body.friends);
-  if (friends === null) {
-    return c.json({ success: false, message: "friends の形式が不正です" }, 400);
-  }
-
   const id = crypto.randomUUID();
   const supabase = createSupabaseClient();
   if (!supabase) {
@@ -112,7 +106,6 @@ export const registerHandler = async (c: Context) => {
       affiliation,
       icon_url,
       social_links,
-      friends,
       password_hash,
     })
     .select("id,username")
