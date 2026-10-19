@@ -8,6 +8,7 @@ import { exchangeHandler } from "./routes/exchange.js";
 import { userAsRequesterHandler, userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
 import { iconHandler, iconFileHandler } from "./routes/icon.js";
+import { rscPayloadHandler } from "./routes/rsc-payload.js";
 
 const app = new Hono<AppEnv>();
 
@@ -30,6 +31,9 @@ app.post("/api/icon", iconHandler);
 app.get("/api/user", userHandler);
 app.post("/api/user", userAsRequesterHandler);
 app.get("/icons/:file", iconFileHandler);
+app.get("*", async (c, next) =>
+  new URL(c.req.url).pathname.endsWith(".txt") ? rscPayloadHandler(c) : next(),
+);
 
 app.notFound((c) => {
   return c.json({ success: false, message: "Not Found" }, 404);
