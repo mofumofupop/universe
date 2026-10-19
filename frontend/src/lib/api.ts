@@ -8,6 +8,9 @@ import { derivePasswordKey } from "./password";
 /** Marks localStorage credentials as PBKDF2-derived keys (see ./password.ts). */
 const AUTH_VERSION = "2";
 
+/** Dispatched on `window` after the profile or icon is saved, so open pages can refetch it. */
+export const PROFILE_UPDATED_EVENT = "profile:updated";
+
 /** Thrown when the stored credentials were rejected; they have already been cleared. */
 export class AuthError extends Error {}
 

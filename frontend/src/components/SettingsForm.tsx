@@ -15,6 +15,7 @@ import {
 } from "@/components/ProfileFields";
 import {
   AuthError,
+  PROFILE_UPDATED_EVENT,
   changePassword,
   getAuthFromStorage,
   getUser,
@@ -113,6 +114,7 @@ export function SettingsForm() {
       }
       setSocialLinks(toSocialLinkSlots(filledLinks));
       setProfileStatus({ kind: "success", message: "プロフィールを保存しました" });
+      window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
     } catch (err) {
       if (handleAuthError(err)) return;
       setProfileStatus({ kind: "error", message: errorMessage(err, "プロフィールの保存に失敗しました") });

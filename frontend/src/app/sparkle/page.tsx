@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { User } from "@/types/User";
 import FlipAnimation from "@/components/Card/FlipAnimation";
-import { AuthError, getUser, getAccount, getAuthFromStorage } from "@/lib/api";
+import {
+  AuthError,
+  PROFILE_UPDATED_EVENT,
+  getUser,
+  getAccount,
+  getAuthFromStorage,
+} from "@/lib/api";
 import Header from "@/components/Header";
 
 // BaseMapを動的にインポート（SSRを無効化）
@@ -86,6 +92,7 @@ export default function Sparkle() {
   const [spaceUsers, setSpaceUsers] = useState<SpaceUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -244,7 +251,14 @@ export default function Sparkle() {
     }
 
     fetchUserData();
-  }, [router]);
+  }, [router, reloadKey]);
+
+  // Settings is a popup over this page, so refetch when it saves the profile
+  useEffect(() => {
+    const reload = () => setReloadKey((k) => k + 1);
+    window.addEventListener(PROFILE_UPDATED_EVENT, reload);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, reload);
+  }, []);
 
   if (loading) {
     return (

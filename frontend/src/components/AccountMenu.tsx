@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Menu, X, User, Settings, LogOut } from "lucide-react";
 
 interface MenuProps {
   onLogout?: () => void;
+  onOpenSettings?: () => void;
   /** ボタン用の追加クラス（ヘッダー内では枠を消す等に使います） */
   buttonClassName?: string;
   /** アイコンの色クラス（例: 'text-white'） */
@@ -12,11 +12,11 @@ interface MenuProps {
 
 export default function AccountMenu({
   onLogout,
+  onOpenSettings,
   buttonClassName,
   iconClassName,
 }: MenuProps) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // 外部クリックで閉じる
@@ -75,7 +75,7 @@ export default function AccountMenu({
             className="flex items-center gap-2 px-6 py-3 w-full text-slate-800 hover:bg-slate-100 first:rounded-t-lg last:rounded-b-lg"
             onClick={() => {
               setOpen(false);
-              router.push("/settings");
+              onOpenSettings?.();
             }}
           >
             <Settings size={18} /> <span>Settings</span>
