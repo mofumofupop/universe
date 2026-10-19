@@ -3,7 +3,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-// Profile inputs shared by SignupForm and SettingsForm
+// Profile inputs shared by SignupForm and ProfileForm
 
 export const SOCIAL_LINK_SLOTS = 5;
 
@@ -194,3 +194,22 @@ export function PasswordField({
     </div>
   );
 }
+
+export type FormStatus = { kind: "success" | "error"; message: string } | null;
+
+export function StatusMessage({ status }: { status: FormStatus }) {
+  if (!status) return null;
+  const isError = status.kind === "error";
+  return (
+    <div
+      className={`mb-4 p-3 rounded-md border ${
+        isError ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+      }`}
+    >
+      <p className={`text-sm ${isError ? "text-red-600" : "text-emerald-700"}`}>{status.message}</p>
+    </div>
+  );
+}
+
+export const errorMessage = (err: unknown, fallback: string) =>
+  err instanceof Error ? err.message : fallback;

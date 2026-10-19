@@ -253,7 +253,7 @@ export default function Sparkle() {
     fetchUserData();
   }, [router, reloadKey]);
 
-  // Settings is a popup over this page, so refetch when it saves the profile
+  // The profile editor is a popup over this page, so refetch when it saves the profile
   useEffect(() => {
     const reload = () => setReloadKey((k) => k + 1);
     window.addEventListener(PROFILE_UPDATED_EVENT, reload);

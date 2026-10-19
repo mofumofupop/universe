@@ -3,6 +3,7 @@ import { Menu, X, User, Settings, LogOut } from "lucide-react";
 
 interface MenuProps {
   onLogout?: () => void;
+  onOpenProfile?: () => void;
   onOpenSettings?: () => void;
   /** ボタン用の追加クラス（ヘッダー内では枠を消す等に使います） */
   buttonClassName?: string;
@@ -12,6 +13,7 @@ interface MenuProps {
 
 export default function AccountMenu({
   onLogout,
+  onOpenProfile,
   onOpenSettings,
   buttonClassName,
   iconClassName,
@@ -68,7 +70,13 @@ export default function AccountMenu({
             My Account
           </div>
           <div className="border-t border-slate-200" />
-          <button className="flex items-center gap-2 px-6 py-3 w-full text-slate-800 hover:bg-slate-100 first:rounded-t-lg last:rounded-b-lg">
+          <button
+            className="flex items-center gap-2 px-6 py-3 w-full text-slate-800 hover:bg-slate-100 first:rounded-t-lg last:rounded-b-lg"
+            onClick={() => {
+              setOpen(false);
+              onOpenProfile?.();
+            }}
+          >
             <User size={18} /> <span>Profile</span>
           </button>
           <button

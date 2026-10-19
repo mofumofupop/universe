@@ -13,6 +13,7 @@ import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
+import { ProfileForm } from "./ProfileForm";
 import { SettingsForm } from "./SettingsForm";
 
 interface HeaderProps {
@@ -22,7 +23,7 @@ interface HeaderProps {
 
 export default function Header({ children, className }: HeaderProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formType, setFormType] = useState<"login" | "signup" | "settings">("login");
+  const [formType, setFormType] = useState<"login" | "signup" | "profile" | "settings">("login");
   const isLoggedIn = useIsLoggedIn();
   const router = useRouter();
   const pathname = usePathname();
@@ -44,6 +45,11 @@ export default function Header({ children, className }: HeaderProps) {
 
   const openSignupForm = () => {
     setFormType("signup");
+    setIsFormOpen(true);
+  };
+
+  const openProfileForm = () => {
+    setFormType("profile");
     setIsFormOpen(true);
   };
 
@@ -109,6 +115,7 @@ export default function Header({ children, className }: HeaderProps) {
               {isLoggedIn === true && (
                 <AccountMenu
                   onLogout={handleLogout}
+                  onOpenProfile={openProfileForm}
                   onOpenSettings={openSettingsForm}
                   buttonClassName=""
                   iconClassName="text-white"
@@ -130,6 +137,7 @@ export default function Header({ children, className }: HeaderProps) {
               {/* Account Menu (no frame, white icon) */}
               <AccountMenu
                 onLogout={handleLogout}
+                onOpenProfile={openProfileForm}
                 onOpenSettings={openSettingsForm}
                 buttonClassName=""
                 iconClassName="text-white"
@@ -177,6 +185,8 @@ export default function Header({ children, className }: HeaderProps) {
                   <LoginForm onSwitchToSignup={openSignupForm} />
                 ) : formType === "signup" ? (
                   <SignupForm onSwitchToLogin={openLoginForm} />
+                ) : formType === "profile" ? (
+                  <ProfileForm />
                 ) : (
                   <SettingsForm />
                 )}
