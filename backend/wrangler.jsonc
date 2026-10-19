@@ -3,6 +3,11 @@
   "name": "universe",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-19",
+  // api.universe.mfmf.moe keeps clients that still call the old API host working
+  "routes": [
+    { "pattern": "universe.mfmf.moe", "custom_domain": true },
+    { "pattern": "api.universe.mfmf.moe", "custom_domain": true }
+  ],
   "assets": {
     "directory": "../frontend/out",
     "binding": "ASSETS",
