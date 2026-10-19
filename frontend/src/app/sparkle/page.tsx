@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { User } from "@/types/User";
 import FlipAnimation from "@/components/Card/FlipAnimation";
-import { getUser, getAccount, getAuthFromStorage } from "@/lib/api";
+import { AuthError, getUser, getAccount, getAuthFromStorage } from "@/lib/api";
 import Header from "@/components/Header";
 
 // BaseMapを動的にインポート（SSRを無効化）
@@ -232,6 +232,10 @@ export default function Sparkle() {
 
         setSpaceUsers(users);
       } catch (err) {
+        if (err instanceof AuthError) {
+          router.replace("/");
+          return;
+        }
         console.error("Failed to fetch user data:", err);
         setError("ユーザー情報の取得に失敗しました");
       } finally {

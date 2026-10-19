@@ -45,9 +45,13 @@ export const accountHandler = async (c: AppContext) => {
       password_hash: string;
     }>();
 
-  if (!profile) return badRequest(c);
-  if (!(await verifyPassword(password_hash, profile.password_hash)))
-    return badRequest(c);
+  // 401 like the other authenticated routes, so the client can tell stale credentials apart
+  if (
+    !profile ||
+    !(await verifyPassword(password_hash, profile.password_hash))
+  ) {
+    return c.json({ success: false, message: "認証に失敗しました" }, 401);
+  }
 
   const friends = await listFriends(db, id);
 
