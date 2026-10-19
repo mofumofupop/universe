@@ -1,5 +1,6 @@
 import type { AppContext } from "../lib/db.js";
 import { listFriends } from "../lib/db.js";
+import { verifyPassword } from "../lib/password.js";
 import { isRecord, isString, isUuidString } from "../lib/validators.js";
 
 type AccountRequestBody = {
@@ -45,7 +46,8 @@ export const accountHandler = async (c: AppContext) => {
     }>();
 
   if (!profile) return badRequest(c);
-  if (profile.password_hash !== password_hash) return badRequest(c);
+  if (!(await verifyPassword(password_hash, profile.password_hash)))
+    return badRequest(c);
 
   const friends = await listFriends(db, id);
 

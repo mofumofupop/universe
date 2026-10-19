@@ -1,4 +1,6 @@
 import type { AppContext } from "../lib/db.js";
+import { rateLimited } from "../lib/db.js";
+import { verifyPassword } from "../lib/password.js";
 import { isRecord, isString } from "../lib/validators.js";
 
 type LoginRequestBody = {
@@ -34,13 +36,16 @@ export const loginHandler = async (c: AppContext) => {
     );
   }
 
+  const limited = await rateLimited(c, c.env.LOGIN_LIMITER);
+  if (limited) return limited;
+
   const profile = await c.env.DB.prepare(
     "SELECT id, username, password_hash FROM profiles WHERE username = ?",
   )
     .bind(username)
     .first<{ id: string; username: string; password_hash: string }>();
 
-  if (!profile || profile.password_hash !== password_hash) {
+  if (!profile || !(await verifyPassword(password_hash, profile.password_hash))) {
     return c.json({ success: false, message: "ログインに失敗しました" }, 401);
   }
 

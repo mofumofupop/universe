@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/components/Logo";
 import { login } from "@/lib/api";
+import { hashPassword } from "@/lib/password";
 
 interface LoginFormProps {
   onSwitchToSignup?: () => void;
@@ -26,12 +27,7 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     setError(null);
 
     try {
-      // パスワードをSHA-256でハッシュ化
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      const passwordHash = await hashPassword(password, username);
 
       // ログイン
       await login(username, passwordHash);
