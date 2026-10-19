@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "universe",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "ef6fc2a8-3ca8-4053-8414-610ff368e0bf",
       "migrations_dir": "migrations"
     }
   ],
