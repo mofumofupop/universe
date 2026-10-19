@@ -1,0 +1,46 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "universe",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-19",
+  "assets": {
+    "directory": "../frontend/out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api", "/api/*", "/icons/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "universe",
+      "database_id": "ef6fc2a8-3ca8-4053-8414-610ff368e0bf",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ICONS",
+      "bucket_name": "universe-icons"
+    }
+  ],
+  // Caps R2 Class A writes (icon uploads) and the account creation that would multiply them.
+  // Counters are per Cloudflare location and approximate by design.
+  "ratelimits": [
+    {
+      "name": "REGISTER_LIMITER",
+      "namespace_id": "2601",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "ICON_UPLOAD_LIMITER",
+      "namespace_id": "2602",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  }
+}

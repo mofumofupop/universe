@@ -1,5 +1,5 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
+import { authenticate } from "../lib/db.js";
 import {
   getOptionalString,
   getOptionalUrlArray,
@@ -14,9 +14,11 @@ type ChangeRequestBody = {
   name?: unknown;
   affiliation?: unknown;
   social_links?: unknown;
+  username?: unknown;
+  friends?: unknown;
 };
 
-export const changeHandler = async (c: Context) => {
+export const changeHandler = async (c: AppContext) => {
   let body: ChangeRequestBody;
   try {
     const json = await c.req.json();
@@ -41,7 +43,7 @@ export const changeHandler = async (c: Context) => {
     );
   }
 
-  if ((body as any).username !== undefined) {
+  if (body.username !== undefined) {
     return c.json(
       { success: false, message: "username は変更できません" },
       400,
@@ -64,68 +66,52 @@ export const changeHandler = async (c: Context) => {
     );
   }
 
-  if ((body as any).friends !== undefined) {
+  if (body.friends !== undefined) {
     return c.json({ success: false, message: "friends は変更できません" }, 400);
   }
 
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      {
-        success: false,
-        message:
-          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
-      },
-      500,
-    );
-  }
-
-  const { data: profile, error: fetchErr } = await supabase
-    .from("profiles")
-    .select("id,username,password_hash")
-    .eq("id", id as string)
-    .maybeSingle();
-
-  if (fetchErr || !profile) {
-    return c.json({ success: false, message: "認証に失敗しました" }, 401);
-  }
-  if (profile.password_hash !== password_hash) {
+  const db = c.env.DB;
+  if (!(await authenticate(db, id, password_hash))) {
     return c.json({ success: false, message: "認証に失敗しました" }, 401);
   }
 
-  const updatePayload: Record<string, unknown> = {};
-  if (name !== null) updatePayload.name = name;
-  if (affiliation !== null) updatePayload.affiliation = affiliation;
-  if (social_links.length > 0) updatePayload.social_links = social_links;
+  const columns: string[] = [];
+  const values: string[] = [];
+  if (name !== null) {
+    columns.push("name = ?");
+    values.push(name);
+  }
+  if (affiliation !== null) {
+    columns.push("affiliation = ?");
+    values.push(affiliation);
+  }
+  if (social_links.length > 0) {
+    columns.push("social_links = ?");
+    values.push(JSON.stringify(social_links));
+  }
 
-  if (Object.keys(updatePayload).length === 0) {
+  if (columns.length === 0) {
     return c.json(
       { success: false, message: "更新するデータがありません" },
       400,
     );
   }
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .update(updatePayload)
-    .eq("id", id as string)
-    .select("id,username")
-    .single();
+  const updated = await db
+    .prepare(
+      `UPDATE profiles SET ${columns.join(", ")} WHERE id = ? RETURNING id, username`,
+    )
+    .bind(...values, id)
+    .first<{ id: string; username: string }>();
 
-  if (error) {
-    if (error.code === "23505") {
-      return c.json(
-        { success: false, message: "ユーザー名が既に使用されています" },
-        409,
-      );
-    }
+  if (!updated) {
     return c.json({ success: false, message: "更新に失敗しました" }, 500);
   }
 
   return c.json({
     success: true,
     message: "更新完了",
-    id: data.id,
-    username: data.username,
+    id: updated.id,
+    username: updated.username,
   });
 };

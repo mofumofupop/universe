@@ -1,0 +1,11 @@
+{
+  "name": "universe",
+  "private": true,
+  "packageManager": "pnpm@10.5.2",
+  "scripts": {
+    "dev": "pnpm --parallel --filter frontend --filter backend dev",
+    "build": "pnpm --filter frontend build",
+    "deploy": "pnpm build && pnpm --filter backend run deploy",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

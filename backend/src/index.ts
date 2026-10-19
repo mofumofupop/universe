@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import type { AppEnv } from "./lib/db.js";
 import { registerHandler } from "./routes/register.js";
 import { changeHandler } from "./routes/change.js";
 import { accountHandler } from "./routes/account.js";
@@ -6,13 +8,12 @@ import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
 import { userHandler } from "./routes/user.js";
 import { loginHandler } from "./routes/login.js";
-import iconHandler from "./routes/icon.js";
-import { cors } from "hono/cors";
+import { iconHandler, iconFileHandler } from "./routes/icon.js";
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 app.use(
-  "*",
+  "/api/*",
   cors({
     origin: "*",
     allowHeaders: ["Content-Type", "Authorization"],
@@ -21,26 +22,12 @@ app.use(
   }),
 );
 
-// app.use('*', async (c, next) => {
-//   c.header('Access-Control-Allow-Origin', '*');
-//   c.header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PUT');
-//   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-//   c.header('Access-Control-Allow-Credentials', 'true');
-//   c.header('Vary', 'Origin');
-
-//   if (c.req.method === 'OPTIONS') {
-//     return c.body(null, 204);
-//   }
-
-//   await next();
-// });
-
 app.onError((err, c) => {
   console.error(err);
   return c.json({ success: false, message: "Internal Server Error" }, 500);
 });
 
-app.get("/", (c) => {
+app.get("/api", (c) => {
   return c.json({ message: "API is running" });
 });
 
@@ -52,5 +39,10 @@ app.post("/api/qr", qrHandler);
 app.post("/api/exchange", exchangeHandler);
 app.post("/api/icon", iconHandler);
 app.get("/api/user", userHandler);
+app.get("/icons/:file", iconFileHandler);
+
+app.notFound((c) => {
+  return c.json({ success: false, message: "Not Found" }, 404);
+});
 
 export default app;

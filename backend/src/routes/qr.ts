@@ -1,6 +1,8 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
+import { authenticate, isUniqueViolation } from "../lib/db.js";
 import { isRecord, isString, isUuidString } from "../lib/validators.js";
+
+export const QR_TTL_MS = 5 * 60 * 1000;
 
 const randomString = (length = 28) => {
   const chars =
@@ -14,8 +16,8 @@ const randomString = (length = 28) => {
   return out;
 };
 
-export const qrHandler = async (c: Context) => {
-  let body: unknown;
+export const qrHandler = async (c: AppContext) => {
+  let body: Record<string, unknown>;
   try {
     const json = await c.req.json();
     if (!isRecord(json)) {
@@ -26,8 +28,8 @@ export const qrHandler = async (c: Context) => {
     return c.json({ success: false, message: "不正なJSONです" }, 400);
   }
 
-  const id = (body as any).id;
-  const password_hash = (body as any).password_hash;
+  const id = body.id;
+  const password_hash = body.password_hash;
   if (!isString(id) || !isUuidString(id)) {
     return c.json({ success: false, message: "id が不正です" }, 400);
   }
@@ -38,93 +40,49 @@ export const qrHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      { success: false, message: "サーバー設定が不足しています" },
-      500,
-    );
-  }
-
-  const { data: profile, error: profileErr } = await supabase
-    .from("profiles")
-    .select("id,password_hash")
-    .eq("id", id)
-    .single();
-  if (profileErr || !profile) {
-    return c.json({ success: false, message: "認証に失敗しました" }, 401);
-  }
-  if ((profile as any).password_hash !== password_hash) {
+  const db = c.env.DB;
+  if (!(await authenticate(db, id, password_hash))) {
     return c.json({ success: false, message: "認証に失敗しました" }, 401);
   }
 
-  const { data: existing, error: existingErr } = await supabase
-    .from("qrs")
-    .select("qr,created_at")
-    .eq("id", id)
-    .maybeSingle();
-  if (existingErr) {
-    return c.json({ success: false, message: "QR 取得に失敗しました" }, 500);
+  const existing = await db
+    .prepare("SELECT qr, created_at FROM qrs WHERE id = ?")
+    .bind(id)
+    .first<{ qr: string; created_at: number }>();
+  if (existing && Date.now() - existing.created_at < QR_TTL_MS) {
+    return c.json({
+      success: true,
+      message: "情報を送信します",
+      qr: existing.qr,
+    });
   }
 
-  const FIVE_MIN_MS = 5 * 60 * 1000;
-  if (existing && existing.qr && existing.created_at) {
-    const created = new Date(existing.created_at).getTime();
-    const now = Date.now();
-    if (now - created < FIVE_MIN_MS) {
-      return c.json({
-        success: true,
-        message: "情報を送信します",
-        qr: existing.qr,
-      });
-    }
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const newQr = randomString(28);
-      const { data: updated, error: updateErr } = await supabase
-        .from("qrs")
-        .update({ qr: newQr, created_at: new Date().toISOString() })
-        .eq("id", id)
-        .select("qr,created_at")
-        .single();
-      if (!updateErr && updated) {
+  // Retry on the unlikely collision with another user's live QR string
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const row = await db
+        .prepare(
+          `INSERT INTO qrs (id, qr, created_at) VALUES (?, ?, ?)
+           ON CONFLICT (id) DO UPDATE SET qr = excluded.qr, created_at = excluded.created_at
+           RETURNING qr`,
+        )
+        .bind(id, randomString(28), Date.now())
+        .first<{ qr: string }>();
+      if (row) {
         return c.json({
           success: true,
           message: "情報を送信します",
-          qr: updated.qr,
+          qr: row.qr,
         });
       }
-      if (updateErr && (updateErr.code as any) !== "23505") {
+    } catch (err) {
+      if (!isUniqueViolation(err)) {
+        console.error(err);
         return c.json(
-          { success: false, message: "QR 更新に失敗しました" },
+          { success: false, message: "QR の生成に失敗しました" },
           500,
         );
       }
-    }
-    return c.json(
-      { success: false, message: "QR の更新が多重に失敗しました" },
-      500,
-    );
-  }
-
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const qr = randomString(28);
-    const { data, error } = await supabase
-      .from("qrs")
-      .insert({ id: id, qr })
-      .select("qr")
-      .single();
-    if (!error && data) {
-      return c.json({
-        success: true,
-        message: "情報を送信します",
-        qr: data.qr,
-      });
-    }
-    if (error && (error.code as any) !== "23505") {
-      return c.json(
-        { success: false, message: "QR の生成に失敗しました" },
-        500,
-      );
     }
   }
   return c.json(

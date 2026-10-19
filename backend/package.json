@@ -1,33 +1,27 @@
 {
-  "name": "hono",
+  "name": "backend",
+  "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "dev:vercel": "vercel dev",
-    "deploy": "vercel deploy --prod",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types",
+    "typecheck": "wrangler types --check && tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply universe --local",
+    "db:migrate:remote": "wrangler d1 migrations apply universe --remote",
     "format": "prettier --write ./src",
-    "test": "vitest",
-    "test:register": "vitest run tests/register.js",
-    "test:qr": "vitest run tests/qr.js",
-    "test:exchange": "vitest run tests/exchange.js",
-    "test:icon": "vitest run tests/icon.js",
-    "vercel-build": "npm install --arch=x64 --platform=linux sharp"
+    "test": "vitest"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.7",
-    "@supabase/supabase-js": "^2.87.1",
-    "hono": "^4.10.8",
-    "sharp": "^0.34.5"
+    "hono": "^4.13.13"
   },
   "devDependencies": {
-    "@types/node": "^20.11.17",
-    "axios": "^1.13.2",
-    "dotenv": "^17.2.3",
-    "form-data": "^4.0.5",
-    "prettier": "^3.7.4",
-    "tsx": "^4.7.1",
-    "typescript": "^5.8.3",
-    "vercel": "^50.0.1",
-    "vitest": "^4.0.15"
+    "axios": "^1.20.0",
+    "form-data": "^4.0.6",
+    "prettier": "^3.9.10",
+    "sharp": "^0.35.5",
+    "typescript": "^5",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.151.1"
   }
 }

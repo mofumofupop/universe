@@ -2,8 +2,10 @@
  * API関連のユーティリティ関数
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+import { cropToSquareIcon } from "./icon";
+
+// Same origin as the Worker; `next dev` proxies /api to `wrangler dev` (see next.config.ts)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 /**
  * レスポンスの基本型
@@ -451,7 +453,7 @@ export async function uploadIcon(
     const formData = new FormData();
     formData.append("id", userId);
     formData.append("password_hash", passwordHash);
-    formData.append("icon", iconFile);
+    formData.append("icon", await cropToSquareIcon(iconFile), "icon.png");
 
     const response = await fetch(`${API_BASE_URL}/api/icon`, {
       method: "POST",

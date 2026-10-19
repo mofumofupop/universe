@@ -1,4 +1,6 @@
-const CACHE_NAME = 'universe-pwa-v1';
+const CACHE_NAME = 'universe-pwa-v2';
+// Served by the Worker on the same origin; must never be answered from the cache
+const NETWORK_ONLY_PREFIXES = ['/api/', '/icons/'];
 const PRECACHE_URLS = [
   '/',
   '/offline.html',
@@ -22,6 +24,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
+  if (url.origin === self.location.origin && NETWORK_ONLY_PREFIXES.some((p) => url.pathname.startsWith(p))) {
+    return;
+  }
 
   // Navigation requests: network-first, fallback to offline page
   if (request.mode === 'navigate') {
