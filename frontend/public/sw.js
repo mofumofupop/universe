@@ -1,6 +1,10 @@
-const CACHE_NAME = 'universe-pwa-v2';
+const CACHE_NAME = 'universe-pwa-v3';
 // Served by the Worker on the same origin; must never be answered from the cache
 const NETWORK_ONLY_PREFIXES = ['/api/', '/icons/'];
+
+// Next.js RSC payloads (`/page.txt?_rsc=...`) change with every build, so a cached one from an
+// older build makes the router reload into the raw payload
+const isRscPayload = (url) => url.pathname.endsWith('.txt');
 const PRECACHE_URLS = [
   '/',
   '/offline.html',
@@ -25,7 +29,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (url.origin === self.location.origin && NETWORK_ONLY_PREFIXES.some((p) => url.pathname.startsWith(p))) {
+  if (
+    url.origin === self.location.origin &&
+    (NETWORK_ONLY_PREFIXES.some((p) => url.pathname.startsWith(p)) || isRscPayload(url))
+  ) {
     return;
   }
 
