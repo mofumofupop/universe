@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
+import { getAuthFromStorage } from "./api";
 
 export function useIsLoggedIn(): boolean | undefined {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     const check = () => {
-      if (typeof window !== "undefined") {
-        const userId = localStorage.getItem("userId");
-        const passwordHash = localStorage.getItem("passwordHash");
-        setIsLoggedIn(!!(userId && passwordHash));
-      }
+      const { userId, passwordHash } = getAuthFromStorage();
+      setIsLoggedIn(!!(userId && passwordHash));
     };
 
     check();

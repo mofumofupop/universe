@@ -1,5 +1,6 @@
 import type { AppContext } from "../lib/db.js";
 import { isUniqueViolation, rateLimited } from "../lib/db.js";
+import { toStoredHash } from "../lib/password.js";
 import {
   getOptionalString,
   getOptionalUrlArray,
@@ -92,7 +93,14 @@ export const registerHandler = async (c: AppContext) => {
       `INSERT INTO profiles (id, username, name, affiliation, social_links, password_hash)
        VALUES (?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, username, name, affiliation, JSON.stringify(social_links), password_hash)
+      .bind(
+        id,
+        username,
+        name,
+        affiliation,
+        JSON.stringify(social_links),
+        await toStoredHash(password_hash),
+      )
       .run();
   } catch (err) {
     if (isUniqueViolation(err)) {

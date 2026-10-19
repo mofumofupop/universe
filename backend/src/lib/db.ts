@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { verifyPassword } from "./password.js";
 
 export type AppEnv = { Bindings: Env };
 export type AppContext = Context<AppEnv>;
@@ -43,7 +44,7 @@ export const authenticate = async (
     .prepare("SELECT id, password_hash FROM profiles WHERE id = ?")
     .bind(id)
     .first<{ id: string; password_hash: string }>();
-  if (!row || row.password_hash !== password_hash) return null;
+  if (!row || !(await verifyPassword(password_hash, row.password_hash))) return null;
   return row.id;
 };
 

@@ -24,9 +24,14 @@
       "bucket_name": "universe-icons"
     }
   ],
-  // Caps R2 Class A writes (icon uploads) and the account creation that would multiply them.
-  // Counters are per Cloudflare location and approximate by design.
+  // Caps R2 Class A writes (icon uploads), the account creation that would multiply them,
+  // and online password guessing. Counters are per Cloudflare location and approximate by design.
   "ratelimits": [
+    {
+      "name": "LOGIN_LIMITER",
+      "namespace_id": "2603",
+      "simple": { "limit": 10, "period": 60 }
+    },
     {
       "name": "REGISTER_LIMITER",
       "namespace_id": "2601",

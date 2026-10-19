@@ -3,6 +3,10 @@
  */
 
 import { cropToSquareIcon } from "./icon";
+import { derivePasswordKey } from "./password";
+
+/** Marks localStorage credentials as PBKDF2-derived keys (see ./password.ts). */
+const AUTH_VERSION = "2";
 
 // Same origin as the Worker; `next dev` proxies /api to `wrangler dev` (see next.config.ts)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -178,10 +182,36 @@ export function getAuthFromStorage(): {
     return { userId: null, passwordHash: null };
   }
 
+  // Values saved before PBKDF2 was added are upgraded by upgradeLegacyAuth(); until then they would only get 401s
+  if (localStorage.getItem("authVersion") !== AUTH_VERSION) {
+    return { userId: null, passwordHash: null };
+  }
+
   const userId = localStorage.getItem("userId");
   const passwordHash = localStorage.getItem("passwordHash");
 
   return { userId, passwordHash };
+}
+
+/**
+ * Converts credentials stored before PBKDF2 (SHA-256 of the password) into the current format.
+ * The username needed as the salt comes from the public profile endpoint.
+ */
+export async function upgradeLegacyAuth(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem("authVersion") === AUTH_VERSION) return;
+
+  const userId = localStorage.getItem("userId");
+  const legacyHash = localStorage.getItem("passwordHash");
+  if (!userId || !legacyHash) return;
+
+  try {
+    const { username } = await getUser(userId);
+    saveAuthToStorage(userId, await derivePasswordKey(legacyHash, username));
+  } catch (error) {
+    console.warn("Failed to upgrade stored credentials; signing out", error);
+    clearAuthFromStorage();
+  }
 }
 
 /**
@@ -194,6 +224,7 @@ export function saveAuthToStorage(userId: string, passwordHash: string): void {
 
   localStorage.setItem("userId", userId);
   localStorage.setItem("passwordHash", passwordHash);
+  localStorage.setItem("authVersion", AUTH_VERSION);
   // 同一タブでの変化通知（storageイベントは同一タブでは発火しないため）
   try {
     window.dispatchEvent(new Event("auth:changed"));
@@ -212,6 +243,7 @@ export function clearAuthFromStorage(): void {
 
   localStorage.removeItem("userId");
   localStorage.removeItem("passwordHash");
+  localStorage.removeItem("authVersion");
   try {
     window.dispatchEvent(new Event("auth:changed"));
   } catch {
@@ -409,15 +441,21 @@ export async function getUser(
   passwordHash?: string
 ): Promise<UserResponse> {
   try {
-    const params = new URLSearchParams({ target: targetUserId });
-    if (userId && passwordHash) {
-      params.append("id", userId);
-      params.append("password_hash", passwordHash);
-    }
-
-    const response = await fetch(`${API_BASE_URL}/api/user?${params}`, {
-      method: "GET",
-    });
+    // Credentials go in a POST body so they never appear in URLs or access logs
+    const response =
+      userId && passwordHash
+        ? await fetch(`${API_BASE_URL}/api/user`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              target: targetUserId,
+              id: userId,
+              password_hash: passwordHash,
+            }),
+          })
+        : await fetch(
+            `${API_BASE_URL}/api/user?${new URLSearchParams({ target: targetUserId })}`,
+          );
 
     const data = await response.json();
 

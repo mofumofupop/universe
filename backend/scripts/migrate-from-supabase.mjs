@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import sharp from "sharp";
+import { upgradeLegacyStoredHash } from "./password.mjs";
 
 const target = process.argv.includes("--remote") ? "--remote" : "--local";
 const dryRun = process.argv.includes("--dry-run");
@@ -87,7 +88,8 @@ for (const p of profiles) {
       p.affiliation,
       iconUrl,
       JSON.stringify(socialLinks),
-      p.password_hash,
+      // Supabase holds the pre-PBKDF2 format (SHA-256 of the password)
+      await upgradeLegacyStoredHash(p.password_hash, p.username),
       toIso(p.created_at),
     ]
       .map(sql)
