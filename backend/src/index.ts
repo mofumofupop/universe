@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "./lib/db.js";
 import { registerHandler } from "./routes/register.js";
 import { changeHandler } from "./routes/change.js";
+import { passwordHandler } from "./routes/password.js";
 import { accountHandler } from "./routes/account.js";
 import { qrHandler } from "./routes/qr.js";
 import { exchangeHandler } from "./routes/exchange.js";
@@ -23,6 +24,7 @@ app.get("/api", (c) => {
 
 app.post("/api/register", registerHandler);
 app.post("/api/change", changeHandler);
+app.post("/api/password", passwordHandler);
 app.post("/api/login", loginHandler);
 app.post("/api/account", accountHandler);
 app.post("/api/qr", qrHandler);

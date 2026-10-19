@@ -3,12 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/components/Logo";
 import { register, uploadIcon } from "@/lib/api";
 import { hashPassword } from "@/lib/password";
+import {
+  AffiliationField,
+  IconField,
+  NameField,
+  PasswordField,
+  SocialLinksFields,
+  UsernameField,
+  toSocialLinkSlots,
+} from "@/components/ProfileFields";
 
 interface SignupFormProps {
   onSwitchToLogin?: () => void;
@@ -22,27 +29,9 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [affiliation, setAffiliation] = useState("");
-  const [socialLinks, setSocialLinks] = useState<string[]>(["", "", "", "", ""]);
+  const [socialLinks, setSocialLinks] = useState<string[]>(toSocialLinkSlots);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleIconChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setIconFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setIconPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSocialLinkChange = (index: number, value: string) => {
-    const newLinks = [...socialLinks];
-    newLinks[index] = value;
-    setSocialLinks(newLinks);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,121 +123,24 @@ export function SignupForm({ onSwitchToLogin }: SignupFormProps) {
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Icon Upload Area */}
-          <div className="flex justify-center my-3">
-            <label htmlFor="icon-upload" className="cursor-pointer">
-              <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden border-2 border-slate-300 hover:border-slate-400 transition-colors">
-                {iconPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={iconPreview} alt="Icon preview" className="w-full h-full object-cover" />
-                ) : (
-                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                )}
-              </div>
-              <input
-                id="icon-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleIconChange}
-              />
-            </label>
-          </div>
-
-          {/* Username */}
-          <div className="space-y-1.5">
-            <Label htmlFor="username" className="text-sm font-medium text-slate-900">
-              Username<span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-white border-slate-300 focus:border-slate-500"
-              pattern="[a-z0-9_]+"
-              title="Only lowercase letters (a-z), numbers (0-9), and underscore (_) are allowed"
-              required
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Enter your @username. Allowed: lowercase letters (a-z), numbers (0-9), underscore (_).
-            </p>
-          </div>
-
-          {/* Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-sm font-medium text-slate-900">
-              Name<span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="bg-white border-slate-300 focus:border-slate-500"
-              required
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Enter your nickname
-            </p>
-          </div>
-
-          {/* Password */}
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-sm font-medium text-slate-900">
-              Password<span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-white border-slate-300 focus:border-slate-500"
-              required
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Passwords can include uppercase and lowercase letters, NUMBERS, and symbols ( A,a,1,! )
-            </p>
-          </div>
-
-          {/* Affiliation */}
-          <div className="space-y-1.5">
-            <Label htmlFor="affiliation" className="text-sm font-medium text-slate-900">
-              Affiliation
-            </Label>
-            <Input
-              id="affiliation"
-              type="text"
-              value={affiliation}
-              onChange={(e) => setAffiliation(e.target.value)}
-              className="bg-white border-slate-300 focus:border-slate-500"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Enter your affiliation and position
-            </p>
-          </div>
-
-          {/* Social Links */}
-          {[1, 2, 3, 4, 5].map((num) => (
-            <div key={num} className="space-y-1.5">
-              <Label htmlFor={`social-link-${num}`} className="text-sm font-medium text-slate-900">
-                Social Links{num}{num === 1 && <span className="text-red-500">*</span>}
-              </Label>
-              <Input
-                id={`social-link-${num}`}
-                type="text"
-                value={socialLinks[num - 1]}
-                onChange={(e) => handleSocialLinkChange(num - 1, e.target.value)}
-                className="bg-white border-slate-300 focus:border-slate-500"
-                required={num === 1}
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Enter your social account links (X,Instagram...)
-              </p>
-            </div>
-          ))}
+          <IconField
+            preview={iconPreview}
+            onChange={(file, previewUrl) => {
+              setIconFile(file);
+              setIconPreview(previewUrl);
+            }}
+          />
+          <UsernameField value={username} onChange={setUsername} />
+          <NameField value={name} onChange={setName} />
+          <PasswordField
+            id="password"
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            hint="Passwords can include uppercase and lowercase letters, NUMBERS, and symbols ( A,a,1,! )"
+          />
+          <AffiliationField value={affiliation} onChange={setAffiliation} />
+          <SocialLinksFields links={socialLinks} onChange={setSocialLinks} />
 
           {/* Submit Button */}
           <div className="flex justify-end mt-4 pt-2">

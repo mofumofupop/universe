@@ -534,3 +534,67 @@ export async function uploadIcon(
     throw error;
   }
 }
+/**
+ * プロフィール (名前・所属・SNSリンク) を更新
+ * @param userId ユーザーのUUID
+ * @param passwordHash 保存済みの認証情報
+ * @param profile 更新する値。affiliation は空文字で消去できる
+ */
+export async function updateProfile(
+  userId: string,
+  passwordHash: string,
+  profile: { name: string; affiliation: string; socialLinks: string[] }
+): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/change`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: userId,
+      password_hash: passwordHash,
+      name: profile.name,
+      affiliation: profile.affiliation,
+      social_links: profile.socialLinks,
+    }),
+  });
+
+  const data = await response.json();
+  rejectStaleCredentials(response, data.message);
+
+  if (!response.ok) {
+    throw new Error(data.message || "プロフィールの更新に失敗しました");
+  }
+
+  return data;
+}
+
+/**
+ * パスワードを変更し、保存済みの認証情報を新しいものに置き換える
+ * @param userId ユーザーのUUID
+ * @param currentPasswordHash 現在のパスワードから導出した値 (保存済みの値と同じになる)
+ * @param newPasswordHash 新しいパスワードから導出した値
+ */
+export async function changePassword(
+  userId: string,
+  currentPasswordHash: string,
+  newPasswordHash: string
+): Promise<ApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: userId,
+      password_hash: currentPasswordHash,
+      new_password_hash: newPasswordHash,
+    }),
+  });
+
+  const data = await response.json();
+  rejectStaleCredentials(response, data.message);
+
+  if (!response.ok) {
+    throw new Error(data.message || "パスワードの変更に失敗しました");
+  }
+
+  saveAuthToStorage(userId, newPasswordHash);
+  return data;
+}
