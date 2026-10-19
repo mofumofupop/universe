@@ -1,5 +1,5 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
+import { isUniqueViolation } from "../lib/db.js";
 import {
   getOptionalString,
   getOptionalUrlArray,
@@ -17,7 +17,7 @@ type RegisterRequestBody = {
   password_hash?: unknown;
 };
 
-export const registerHandler = async (c: Context) => {
+export const registerHandler = async (c: AppContext) => {
   let body: RegisterRequestBody;
   try {
     const json = await c.req.json();
@@ -65,8 +65,7 @@ export const registerHandler = async (c: Context) => {
 
   const name = getOptionalString(body.name);
   const affiliation = getOptionalString(body.affiliation);
-  const icon_url = null;
-  // const icon_url = getOptionalString(body.icon_url); // /api/icon に分離
+  // icon_url is set by /api/icon
   const social_links = getOptionalUrlArray(body.social_links);
   if (social_links === null) {
     return c.json(
@@ -85,46 +84,28 @@ export const registerHandler = async (c: Context) => {
   }
 
   const id = crypto.randomUUID();
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      {
-        success: false,
-        message:
-          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
-      },
-      500,
-    );
-  }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .insert({
-      id,
-      username,
-      name,
-      affiliation,
-      icon_url,
-      social_links,
-      password_hash,
-    })
-    .select("id,username")
-    .single();
-
-  if (error) {
-    if (error.code === "23505") {
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO profiles (id, username, name, affiliation, social_links, password_hash)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(id, username, name, affiliation, JSON.stringify(social_links), password_hash)
+      .run();
+  } catch (err) {
+    if (isUniqueViolation(err)) {
       return c.json(
         { success: false, message: "ユーザー名が既に使用されています" },
         409,
       );
     }
+    console.error(err);
     return c.json({ success: false, message: "登録に失敗しました" }, 500);
   }
 
   return c.json({
     success: true,
     message: "登録完了",
-    id: data.id,
-    username: data.username,
+    id,
+    username,
   });
 };

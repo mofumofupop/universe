@@ -1,14 +1,8 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
-import { isRecord, isString, isUuidString } from "../lib/validators.js";
+import type { AppContext } from "../lib/db.js";
+import { authenticate, listFriends, parseJsonArray } from "../lib/db.js";
+import { isString, isUuidString } from "../lib/validators.js";
 
-type UserRequestBody = {
-  target?: unknown;
-  id?: unknown;
-  password_hash?: unknown;
-};
-
-export const userHandler = async (c: Context) => {
+export const userHandler = async (c: AppContext) => {
   const target = c.req.query("target");
   const id = c.req.query("id");
   const password_hash = c.req.query("password_hash");
@@ -30,48 +24,38 @@ export const userHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      {
-        success: false,
-        message:
-          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
-      },
-      500,
-    );
-  }
-
+  const db = c.env.DB;
   let isFriend = false;
   if (hasId && hasPassword) {
-    const { data: requester, error: requesterErr } = await supabase
-      .from("profiles")
-      .select("id,password_hash,friends")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (requesterErr || !requester) {
+    if (!(await authenticate(db, id, password_hash))) {
       return c.json({ success: false, message: "認証に失敗しました" }, 401);
     }
-    if (requester.password_hash !== password_hash) {
-      return c.json({ success: false, message: "認証に失敗しました" }, 401);
-    }
-
-    const friends = Array.isArray(requester.friends) ? requester.friends : [];
-    isFriend = friends.some((f: any) => f && f.id === target);
+    const edge = await db
+      .prepare("SELECT 1 FROM friendships WHERE user_id = ? AND friend_id = ?")
+      .bind(id, target)
+      .first();
+    isFriend = edge !== null;
   }
 
-  const { data: targetUser, error: targetErr } = await supabase
-    .from("profiles")
-    .select("id,username,name,affiliation,icon_url,social_links,friends")
-    .eq("id", target)
-    .maybeSingle();
+  const targetUser = await db
+    .prepare(
+      "SELECT id, username, name, affiliation, icon_url, social_links FROM profiles WHERE id = ?",
+    )
+    .bind(target)
+    .first<{
+      id: string;
+      username: string;
+      name: string | null;
+      affiliation: string | null;
+      icon_url: string | null;
+      social_links: string;
+    }>();
 
-  if (targetErr || !targetUser) {
+  if (!targetUser) {
     return c.json({ success: false, message: "取得できませんでした" }, 400);
   }
 
-  const response: any = {
+  return c.json({
     success: true,
     message: "情報を送信します",
     id: targetUser.id,
@@ -79,14 +63,9 @@ export const userHandler = async (c: Context) => {
     name: targetUser.name,
     affiliation: targetUser.affiliation,
     icon_url: targetUser.icon_url,
-    social_links: targetUser.social_links,
-  };
-
-  if (isFriend) {
-    response.friends = targetUser.friends;
-  }
-
-  return c.json(response);
+    social_links: parseJsonArray(targetUser.social_links),
+    ...(isFriend && { friends: await listFriends(db, target) }),
+  });
 };
 
 export default userHandler;

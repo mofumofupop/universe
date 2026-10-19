@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "universe",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-19",
+  "assets": {
+    "directory": "../frontend/out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*", "/icons/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "universe",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ICONS",
+      "bucket_name": "universe-icons"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  }
+}

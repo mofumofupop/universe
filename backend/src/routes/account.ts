@@ -1,5 +1,5 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
+import { listFriends } from "../lib/db.js";
 import { isRecord, isString, isUuidString } from "../lib/validators.js";
 
 type AccountRequestBody = {
@@ -7,11 +7,11 @@ type AccountRequestBody = {
   password_hash?: unknown;
 };
 
-const badRequest = (c: Context) => {
+const badRequest = (c: AppContext) => {
   return c.json({ success: false, message: "情報が間違っています" }, 400);
 };
 
-export const accountHandler = async (c: Context) => {
+export const accountHandler = async (c: AppContext) => {
   let body: AccountRequestBody;
   try {
     const json = await c.req.json();
@@ -30,59 +30,40 @@ export const accountHandler = async (c: Context) => {
   if (!isString(password_hash) || password_hash.trim() === "")
     return badRequest(c);
 
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      {
-        success: false,
-        message:
-          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
-      },
-      500,
-    );
-  }
+  const db = c.env.DB;
+  const profile = await db
+    .prepare(
+      "SELECT id, username, name, icon_url, password_hash FROM profiles WHERE id = ?",
+    )
+    .bind(id)
+    .first<{
+      id: string;
+      username: string;
+      name: string | null;
+      icon_url: string | null;
+      password_hash: string;
+    }>();
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id,username,name,icon_url,friends,password_hash")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error || !profile) return badRequest(c);
+  if (!profile) return badRequest(c);
   if (profile.password_hash !== password_hash) return badRequest(c);
 
-  const friends = Array.isArray(profile.friends) ? profile.friends : [];
+  const friends = await listFriends(db, id);
 
-  // friends は [{id, username}, ...] の配列
-  const friendIds = friends.map((f: any) => f.id).filter(Boolean);
-
-  let friendsFriends: Record<string, { id: string; username: string }[]> = {};
-  if (friendIds.length > 0) {
-    const { data: rows, error: friendsError } = await supabase
-      .from("profiles")
-      .select("id,username,friends")
-      .in("id", friendIds);
-
-    if (friendsError) {
-      return c.json({ success: false, message: "取得に失敗しました" }, 500);
+  const friendsFriends: Record<string, { id: string; username: string }[]> =
+    Object.fromEntries(friends.map((f) => [f.id, []]));
+  if (friends.length > 0) {
+    const { results } = await db
+      .prepare(
+        `SELECT f.user_id AS owner, p.id, p.username
+         FROM friendships f JOIN profiles p ON p.id = f.friend_id
+         WHERE f.user_id IN (SELECT friend_id FROM friendships WHERE user_id = ?)
+         ORDER BY f.created_at, f.rowid`,
+      )
+      .bind(id)
+      .all<{ owner: string; id: string; username: string }>();
+    for (const row of results) {
+      friendsFriends[row.owner]?.push({ id: row.id, username: row.username });
     }
-
-    friendsFriends = Object.fromEntries(
-      (rows ?? []).map((r: any) => [
-        r.id,
-        Array.isArray(r.friends)
-          ? r.friends
-              .filter(
-                (ff: any) =>
-                  isString(ff?.id) &&
-                  isUuidString(ff.id) &&
-                  isString(ff?.username) &&
-                  ff.username.trim() !== "",
-              )
-              .map((ff: any) => ({ id: ff.id, username: ff.username }))
-          : [],
-      ]),
-    );
   }
 
   return c.json({

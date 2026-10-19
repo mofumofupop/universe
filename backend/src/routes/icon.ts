@@ -1,55 +1,29 @@
-import type { Context } from "hono";
-import sharp from "sharp";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
+import { authenticate } from "../lib/db.js";
 import { isString, isUuidString } from "../lib/validators.js";
 
-const ICON_SIZE = 256;
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
-const STORAGE_BUCKET = "icons";
+// The frontend crops icons to a 256x256 PNG before upload; leave headroom for other clients.
+const MAX_ICON_DIMENSION = 512;
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 const errorResponse = (
-  c: Context,
+  c: AppContext,
   message: string,
   status: 400 | 401 | 500,
-  detail?: any,
 ) => {
-  return c.json(
-    {
-      success: false,
-      message,
-      ...(detail && { detail: JSON.stringify(detail) }),
-    },
-    status,
-  );
+  return c.json({ success: false, message }, status);
 };
 
-const processImageToSquare = async (buffer: Buffer): Promise<Buffer> => {
-  const meta = await sharp(buffer).metadata();
-
-  if (!meta.width || !meta.height) {
-    return sharp(buffer)
-      .resize(ICON_SIZE, ICON_SIZE, { fit: "cover" })
-      .png()
-      .toBuffer();
-  }
-
-  const size = Math.min(meta.width, meta.height);
-  const left = Math.floor((meta.width - size) / 2);
-  const top = Math.floor((meta.height - size) / 2);
-
-  return sharp(buffer)
-    .extract({
-      left: Math.max(0, left),
-      top: Math.max(0, top),
-      width: size,
-      height: size,
-    })
-    .resize(ICON_SIZE, ICON_SIZE)
-    .png()
-    .toBuffer();
+/** Reads width/height from the IHDR chunk, or null when the bytes are not a PNG. */
+const readPngSize = (bytes: Uint8Array) => {
+  if (bytes.length < 24) return null;
+  if (!PNG_SIGNATURE.every((b, i) => bytes[i] === b)) return null;
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
 };
 
-export const iconHandler = async (c: Context) => {
+export const iconHandler = async (c: AppContext) => {
   const contentType = (c.req.header("content-type") || "").toLowerCase();
   if (!contentType.includes("multipart/form-data")) {
     return errorResponse(
@@ -61,22 +35,18 @@ export const iconHandler = async (c: Context) => {
 
   let id: string | undefined;
   let password_hash: string | undefined;
-  let fileBuffer: Buffer | null = null;
+  let file: File | null = null;
 
   try {
     const formData = await c.req.formData();
     const fid = formData.get("id");
     const fpass = formData.get("password_hash");
-    const file = formData.get("icon");
+    const ficon = formData.get("icon");
 
     id = typeof fid === "string" ? fid : undefined;
     password_hash = typeof fpass === "string" ? fpass : undefined;
-
-    if (file && typeof (file as any).arrayBuffer === "function") {
-      const arrayBuffer = await (file as any).arrayBuffer();
-      fileBuffer = Buffer.from(arrayBuffer);
-    }
-  } catch (err) {
+    file = ficon instanceof File ? ficon : null;
+  } catch {
     return errorResponse(c, "multipart の解析に失敗しました", 400);
   }
 
@@ -86,94 +56,68 @@ export const iconHandler = async (c: Context) => {
   if (!isString(password_hash) || password_hash.trim() === "") {
     return errorResponse(c, "password_hash が不足しています", 400);
   }
-  if (!fileBuffer) {
+  if (!file) {
     return errorResponse(c, "icon (ファイル) が不足しています", 400);
   }
-
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return errorResponse(c, "サーバー設定が不足しています", 500);
+  if (file.size > MAX_FILE_SIZE) {
+    return errorResponse(c, "icon のサイズが大きすぎます (2MB 上限)", 400);
   }
 
-  const { data: profile, error: profErr } = await supabase
-    .from("profiles")
-    .select("id,password_hash")
-    .eq("id", id)
-    .single();
-
-  if (profErr || !profile) {
-    return errorResponse(c, "認証に失敗しました", 401);
-  }
-  if ((profile as any).password_hash !== password_hash) {
+  const db = c.env.DB;
+  if (!(await authenticate(db, id, password_hash))) {
     return errorResponse(c, "認証に失敗しました", 401);
   }
 
-  let processed: Buffer;
-  try {
-    processed = await processImageToSquare(fileBuffer);
-  } catch (err) {
-    return errorResponse(c, "icon を画像として処理できません", 400);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const size = readPngSize(bytes);
+  if (
+    !size ||
+    size.width !== size.height ||
+    size.width < 1 ||
+    size.width > MAX_ICON_DIMENSION
+  ) {
+    return errorResponse(
+      c,
+      `icon は ${MAX_ICON_DIMENSION}px 以下の正方形 PNG で送信してください`,
+      400,
+    );
   }
 
-  if (processed.length > MAX_FILE_SIZE) {
-    return errorResponse(c, "icon のサイズが大きすぎます (50MB 上限)", 400);
+  await c.env.ICONS.put(`${id}.png`, bytes, {
+    httpMetadata: { contentType: "image/png" },
+  });
+
+  // Version query busts browser caches because icons are served as immutable
+  const iconUrl = `/icons/${id}.png?v=${Date.now()}`;
+  await db
+    .prepare("UPDATE profiles SET icon_url = ? WHERE id = ?")
+    .bind(iconUrl, id)
+    .run();
+
+  return c.json({
+    success: true,
+    message: "情報を送信します",
+    icon_url: iconUrl,
+  });
+};
+
+export const iconFileHandler = async (c: AppContext) => {
+  const file = c.req.param("file") ?? "";
+  const id = file.endsWith(".png") ? file.slice(0, -".png".length) : "";
+  if (!isUuidString(id)) {
+    return c.json({ success: false, message: "Not Found" }, 404);
   }
 
-  const filename = `${id}.png`;
-
-  try {
-    // try to remove existing file first so the new file is a fresh upload
-    try {
-      const { error: removeErr } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .remove([filename]);
-      if (removeErr) {
-        // ignore not found errors; log others
-        console.warn("icon remove warning:", removeErr);
-      }
-    } catch (err) {
-      console.warn("icon remove exception:", err);
-    }
-
-    const upload = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(filename, processed, { contentType: "image/png", upsert: false });
-
-    if (upload.error) {
-      return errorResponse(
-        c,
-        "アイコンのストレージへの保存に失敗しました",
-        500,
-        upload,
-      );
-    }
-
-    const publicRes = supabase.storage
-      .from(STORAGE_BUCKET)
-      .getPublicUrl(filename);
-    const publicUrl = publicRes.data?.publicUrl ?? null;
-
-    if (!publicUrl) {
-      return errorResponse(c, "公開URL の取得に失敗しました", 500, publicRes);
-    }
-
-    const { error: updErr } = await supabase
-      .from("profiles")
-      .update({ icon_url: publicUrl })
-      .eq("id", id);
-
-    if (updErr) {
-      return errorResponse(c, "プロフィール更新に失敗しました", 500, updErr);
-    }
-
-    return c.json({
-      success: true,
-      message: "情報を送信します",
-      icon_url: publicUrl,
-    });
-  } catch (err) {
-    return errorResponse(c, "アイコンの保存に失敗しました", 500);
+  const object = await c.env.ICONS.get(`${id}.png`);
+  if (!object) {
+    return c.json({ success: false, message: "Not Found" }, 404);
   }
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("cache-control", "public, max-age=31536000, immutable");
+  return new Response(object.body, { headers });
 };
 
 export default iconHandler;

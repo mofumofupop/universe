@@ -1,5 +1,4 @@
-import type { Context } from "hono";
-import { createSupabaseClient } from "../lib/supabase.js";
+import type { AppContext } from "../lib/db.js";
 import { isRecord, isString } from "../lib/validators.js";
 
 type LoginRequestBody = {
@@ -7,7 +6,7 @@ type LoginRequestBody = {
   password_hash?: unknown;
 };
 
-export const loginHandler = async (c: Context) => {
+export const loginHandler = async (c: AppContext) => {
   let body: LoginRequestBody;
   try {
     const json = await c.req.json();
@@ -35,29 +34,13 @@ export const loginHandler = async (c: Context) => {
     );
   }
 
-  const supabase = createSupabaseClient();
-  if (!supabase) {
-    return c.json(
-      {
-        success: false,
-        message:
-          "サーバー設定が不足しています (SUPABASE_URL / SUPABASE_ANON_KEY)",
-      },
-      500,
-    );
-  }
+  const profile = await c.env.DB.prepare(
+    "SELECT id, username, password_hash FROM profiles WHERE username = ?",
+  )
+    .bind(username)
+    .first<{ id: string; username: string; password_hash: string }>();
 
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("id,username,password_hash")
-    .eq("username", username)
-    .maybeSingle();
-
-  if (error || !profile) {
-    return c.json({ success: false, message: "ログインに失敗しました" }, 401);
-  }
-
-  if (profile.password_hash !== password_hash) {
+  if (!profile || profile.password_hash !== password_hash) {
     return c.json({ success: false, message: "ログインに失敗しました" }, 401);
   }
 
