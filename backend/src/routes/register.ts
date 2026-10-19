@@ -1,5 +1,5 @@
 import type { AppContext } from "../lib/db.js";
-import { isUniqueViolation } from "../lib/db.js";
+import { isUniqueViolation, rateLimited } from "../lib/db.js";
 import {
   getOptionalString,
   getOptionalUrlArray,
@@ -82,6 +82,9 @@ export const registerHandler = async (c: AppContext) => {
       400,
     );
   }
+
+  const limited = await rateLimited(c, c.env.REGISTER_LIMITER);
+  if (limited) return limited;
 
   const id = crypto.randomUUID();
   try {

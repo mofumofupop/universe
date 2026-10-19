@@ -1,5 +1,5 @@
 import type { AppContext } from "../lib/db.js";
-import { authenticate } from "../lib/db.js";
+import { authenticate, rateLimited } from "../lib/db.js";
 import { isString, isUuidString } from "../lib/validators.js";
 
 // The frontend crops icons to a 256x256 PNG before upload; leave headroom for other clients.
@@ -63,6 +63,9 @@ export const iconHandler = async (c: AppContext) => {
     return errorResponse(c, "icon のサイズが大きすぎます (2MB 上限)", 400);
   }
 
+  const limited = await rateLimited(c, c.env.ICON_UPLOAD_LIMITER);
+  if (limited) return limited;
+
   const db = c.env.DB;
   if (!(await authenticate(db, id, password_hash))) {
     return errorResponse(c, "認証に失敗しました", 401);
@@ -108,6 +111,13 @@ export const iconFileHandler = async (c: AppContext) => {
     return c.json({ success: false, message: "Not Found" }, 404);
   }
 
+  // Edge cache in front of R2 so repeat views do not count as Class B reads.
+  // The cache key includes the ?v= version, so a re-upload is a fresh miss.
+  // Only effective on custom domains; a no-op on workers.dev.
+  const cache = caches.default;
+  const cached = await cache.match(c.req.raw);
+  if (cached) return cached;
+
   const object = await c.env.ICONS.get(`${id}.png`);
   if (!object) {
     return c.json({ success: false, message: "Not Found" }, 404);
@@ -117,7 +127,9 @@ export const iconFileHandler = async (c: AppContext) => {
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("cache-control", "public, max-age=31536000, immutable");
-  return new Response(object.body, { headers });
+  const response = new Response(object.body, { headers });
+  c.executionCtx.waitUntil(cache.put(c.req.raw, response.clone()));
+  return response;
 };
 
 export default iconHandler;

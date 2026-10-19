@@ -5,6 +5,20 @@ export type AppContext = Context<AppEnv>;
 
 export type FriendSummary = { id: string; username: string; name: string | null };
 
+/** Returns a 429 response when the client IP has exceeded `limiter`, otherwise null. */
+export const rateLimited = async (c: AppContext, limiter: RateLimit) => {
+  const ip = c.req.header("cf-connecting-ip") ?? "unknown";
+  const { success } = await limiter.limit({ key: ip });
+  if (success) return null;
+  return c.json(
+    {
+      success: false,
+      message: "リクエストが多すぎます。しばらくしてから再度お試しください",
+    },
+    429,
+  );
+};
+
 export const isUniqueViolation = (err: unknown): boolean => {
   return err instanceof Error && err.message.includes("UNIQUE constraint failed");
 };

@@ -7,7 +7,7 @@
     "directory": "../frontend/out",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/icons/*"]
+    "run_worker_first": ["/api", "/api/*", "/icons/*"]
   },
   "d1_databases": [
     {
@@ -21,6 +21,20 @@
     {
       "binding": "ICONS",
       "bucket_name": "universe-icons"
+    }
+  ],
+  // Caps R2 Class A writes (icon uploads) and the account creation that would multiply them.
+  // Counters are per Cloudflare location and approximate by design.
+  "ratelimits": [
+    {
+      "name": "REGISTER_LIMITER",
+      "namespace_id": "2601",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "ICON_UPLOAD_LIMITER",
+      "namespace_id": "2602",
+      "simple": { "limit": 5, "period": 60 }
     }
   ],
   "observability": {
