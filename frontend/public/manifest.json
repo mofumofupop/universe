@@ -1,0 +1,25 @@
+{
+  "name": "U'n'IVERSE",
+  "short_name": "U'n'IVERSE",
+  "description": "Create your own profile card easily and share it with the people you meet to expand your universe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/pwa-icon_192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

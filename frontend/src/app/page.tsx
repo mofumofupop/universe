@@ -1,0 +1,13 @@
+import Header from '@/components/Header';
+import HomeHero from '@/components/HomeHero';
+import AutoLogin from '@/components/AutoLogin';
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-slate-900">
+      <Header className="text-white" />
+      <AutoLogin />
+      <HomeHero />
+    </main>
+  );
+}
