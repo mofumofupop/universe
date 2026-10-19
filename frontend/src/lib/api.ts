@@ -8,6 +8,19 @@ import { derivePasswordKey } from "./password";
 /** Marks localStorage credentials as PBKDF2-derived keys (see ./password.ts). */
 const AUTH_VERSION = "2";
 
+/** Thrown when the stored credentials were rejected; they have already been cleared. */
+export class AuthError extends Error {}
+
+/**
+ * Signs out when the server rejects the stored credentials, so pages fall back to the login
+ * screen instead of showing the same error on every visit.
+ */
+function rejectStaleCredentials(response: Response, message: string | undefined): void {
+  if (response.status !== 401) return;
+  clearAuthFromStorage();
+  throw new AuthError(message || "認証に失敗しました");
+}
+
 // Same origin as the Worker; `next dev` proxies /api to `wrangler dev` (see next.config.ts)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -114,6 +127,7 @@ export async function exchangeBusinessCard(
     });
 
     const data = await response.json();
+    rejectStaleCredentials(response, data.message);
 
     if (!response.ok) {
       throw new Error(data.message || "API呼び出しに失敗しました");
@@ -154,6 +168,7 @@ export async function generateQRCode(
     });
 
     const data = await response.json();
+    rejectStaleCredentials(response, data.message);
 
     if (!response.ok) {
       throw new Error(data.message || "QRコード生成に失敗しました");
@@ -411,6 +426,7 @@ export async function getAccount(
     });
 
     const data = await response.json();
+    rejectStaleCredentials(response, data.message);
 
     if (!response.ok) {
       throw new Error(data.message || "アカウント情報の取得に失敗しました");
@@ -458,6 +474,7 @@ export async function getUser(
           );
 
     const data = await response.json();
+    rejectStaleCredentials(response, data.message);
 
     if (!response.ok) {
       throw new Error(data.message || "ユーザー情報の取得に失敗しました");
@@ -500,6 +517,7 @@ export async function uploadIcon(
     });
 
     const data = await response.json();
+    rejectStaleCredentials(response, data.message);
 
     if (!response.ok) {
       throw new Error(data.message || "アイコンのアップロードに失敗しました");
