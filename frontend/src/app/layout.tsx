@@ -25,6 +25,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://universe.mfmf.moe"),
   title: "U'n'IVERSE",
   description:
     "U'n'IVERSE — Create your own profile card easily and share it with the people you meet to expand your universe.",
